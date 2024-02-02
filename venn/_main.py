@@ -45,24 +45,26 @@ class VennDiagram(object):
 
 
     def _initialize_origins(self):
-        """Initialize origins on a small circle around (0, 0)."""
+        """The optimisation procedure uses gradient descent to find
+        the circle arrangement that best matches the desired subset
+        areas. If a subset area is zero, there is no gradient to
+        follow. It is hence paraount that all subset areas exist at
+        initialization.
 
-        origin = np.zeros((2))
-        radius = np.min(self._radii)
+        Here, we evenly space the circle origins around the center of
+        the diagram, such that their circumferences touch. We then
+        shift each circle origin towards that center, such that all
+        circles overlap.
+
+        """
+        x0, y0 = 0, 0 # venn diagram center
         total_sets = len(self.set_sizes)
         angles = 2 * np.pi * np.linspace(0, 1 - 1/total_sets, total_sets)
-
-        def get_point_on_a_circle(origin, radius, angle):
-            """Compute the (x, y) coordinate of a point at a specified angle
-            on a circle given by its (x, y) origin and radius."""
-            x0, y0 = origin
-            x = x0 + radius * np.cos(angle)
-            y = y0 + radius * np.sin(angle)
-            return np.array([x, y])
-
-        return np.array(
-            [get_point_on_a_circle(origin, radius, angle) for angle in angles]
-        )
+        overlap = 0.5 * np.min(self._radii)
+        distances = self._radii - overlap
+        x = x0 + distances * np.cos(angles)
+        y = y0 + distances * np.sin(angles)
+        return np.c_[x, y]
 
 
     def _get_subset_geometries(self, origins):
@@ -140,7 +142,7 @@ class VennDiagram(object):
             data = pd.DataFrame(dict(desired=desired_areas, actual=self._get_subset_areas(origins)))
             data["absolute difference"] = np.abs(data["desired"] - data["actual"])
             data["relative difference"] = data["absolute difference"] / data["desired"]
-            with pd.option_context('display.float_format', '{:0.1f}'.format):
+            with pd.option_context('display.float_format', '{:0.2f}'.format):
                 print(data)
 
         return origins
@@ -177,20 +179,21 @@ if __name__ == "__main__":
 
     # canonical 2-way Venn diagram
     subset_sizes = {
-        (1, 0) : 2,
+        (1, 0) : 1,
         (0, 1) : 1,
         (1, 1) : 0.5,
     }
 
-    # # canonical 3-way Venn diagram
-    # subset_sizes = {
-    #     (1, 0, 0) : 1,
-    #     (0, 1, 0) : 1,
-    #     (0, 0, 1) : 1,
-    #     (1, 1, 0) : 0.5,
-    #     (1, 0, 1) : 0.5,
-    #     (0, 1, 1) : 0.5,
-    #     (1, 1, 1) : 0.25,
-    # }
+    # canonical 3-way Venn diagram
+    subset_sizes = {
+        (1, 0, 0) : 1,
+        (0, 1, 0) : 1,
+        (0, 0, 1) : 1,
+        (1, 1, 0) : 0.5,
+        (1, 0, 1) : 0.5,
+        (0, 1, 1) : 0.5,
+        (1, 1, 1) : 0.25,
+    }
+
     VennDiagram(subset_sizes, verbose=True)
     plt.show()
