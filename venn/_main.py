@@ -95,14 +95,19 @@ class VennDiagram(object):
 
             # # Option 2: relative difference
             # # This often results in the optimization routine failing.
-            # minimum_area = 1e-2
-            # desired_areas[desired_areas < minimum_area] = minimum_area
-            # cost = np.abs(subset_areas - desired_areas) / desired_areas
+            # minimum_area = 1e-2 * np.pi * np.max(self._radii)**2
+            # cost = np.abs(subset_areas - desired_areas) / np.clip(desired_areas, minimum_area, None)
 
             # Option 3: absolute difference of log(area + 1)
             # This transformation is monotonic increasing but strongly compresses large numbers,
             # thus allowing small numbers to carry more weight in the optimization.
-            cost = np.abs(np.log(subset_areas + 1) - np.log(desired_areas + 1))
+            # cost = np.abs(np.log(subset_areas + 1) - np.log(desired_areas + 1))
+
+            # Option 4: absolute difference of 1 / area
+            # This transformation gives smaller subsets more weight such that
+            # small or non-existant subsets are represented accurately.
+            minimum_area = 1e-2 * np.pi * np.max(self._radii)**2
+            cost = np.abs(1 / (subset_areas + minimum_area) - 1 / (desired_areas + minimum_area))
 
             return np.sum(cost)
 
