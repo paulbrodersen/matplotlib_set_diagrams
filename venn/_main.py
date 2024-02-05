@@ -4,9 +4,9 @@ import matplotlib.pyplot as plt
 from itertools import product
 from scipy.spatial.distance import pdist, squareform
 from scipy.optimize import minimize, NonlinearConstraint
+from shapely import intersection_all, union_all
 from shapely.geometry import Point
 from shapely.ops import polylabel
-from shapely import intersection_all, union_all
 
 
 def get_subset_sizes(sets):
