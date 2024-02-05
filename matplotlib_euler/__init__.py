@@ -27,7 +27,7 @@ A python library to plot area-proportional [Euler
 diagrams](https://en.wikipedia.org/wiki/Euler_diagram). Euler diagrams
 are similar to Venn diagrams, in as much as they visualize set
 relationships. However, unlike Venn diagrams, which show all possible
-relations between different sets, Euler diagram shows only relevant
+relations between different sets, Euler diagrams show only relevant
 relationships, i.e. non-empty subsets.
 
 This library was inspired by
