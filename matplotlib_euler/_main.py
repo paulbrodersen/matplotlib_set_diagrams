@@ -26,7 +26,7 @@ def get_subset_sizes(sets):
     return output
 
 
-class VennDiagram(object):
+class EulerDiagram(object):
 
     def __init__(self, subset_sizes, verbose=False, ax=None):
         self.subset_sizes = subset_sizes
@@ -182,7 +182,7 @@ class VennDiagram(object):
 
 if __name__ == "__main__":
 
-    # canonical 2-way Venn diagram
+    # canonical 2-way Euler diagram
     subset_sizes = {
         (1, 0) : 1,
         (0, 1) : 1,
@@ -196,7 +196,7 @@ if __name__ == "__main__":
         (1, 1) : 0.5,
     }
 
-    # canonical 3-way Venn diagram
+    # canonical 3-way Euler diagram
     subset_sizes = {
         (1, 0, 0) : 1,
         (0, 1, 0) : 1,
@@ -315,5 +315,5 @@ if __name__ == "__main__":
     #     (1, 1, 1) : 65012,
     # }
 
-    VennDiagram(subset_sizes, verbose=True)
+    EulerDiagram(subset_sizes, verbose=True)
     plt.show()
