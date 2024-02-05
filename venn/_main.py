@@ -107,7 +107,7 @@ class VennDiagram(object):
             return np.sum(cost)
 
         # constraints:
-        eps = np.min(self._radii) * 0.01
+        eps = np.min(self._radii) * 0.001
         lower_bounds = np.abs(self._radii[np.newaxis, :] - self._radii[:, np.newaxis]) - eps
         lower_bounds[lower_bounds < 0] = 0
         lower_bounds = squareform(lower_bounds)
@@ -128,7 +128,7 @@ class VennDiagram(object):
             self._initialize_origins().flatten(),
             method='SLSQP', # 'COBYLA',
             constraints=[distance_between_origins],
-            options=dict(disp=verbose)
+            options=dict(disp=verbose, eps=eps)
         )
 
         if not result.success:
