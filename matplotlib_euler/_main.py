@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -33,6 +34,7 @@ class EulerDiagram(object):
         self.set_sizes = self._get_set_sizes()
         self._radii = self._get_radii()
         self._origins = self._get_origins(verbose=verbose)
+        self._performance = self._evaluate(verbose=verbose)
         self.plot(ax=ax)
 
 
@@ -83,7 +85,7 @@ class EulerDiagram(object):
 
     def _get_origins(self, verbose):
 
-        desired_areas = np.array([size for size in self.subset_sizes.values()])
+        desired_areas = np.array(list(self.subset_sizes.values()))
 
         def cost_function(flattened_origins):
             origins = flattened_origins.reshape(-1, 2)
@@ -142,15 +144,36 @@ class EulerDiagram(object):
 
         origins = result.x.reshape((-1, 2))
 
-        if verbose:
-            import pandas as pd
-            data = pd.DataFrame(dict(desired=desired_areas, actual=self._get_subset_areas(origins)))
-            data["absolute difference"] = np.abs(data["desired"] - data["actual"])
-            data["relative difference"] = data["absolute difference"] / data["desired"]
-            with pd.option_context('display.float_format', '{:0.2f}'.format):
-                print(data)
-
         return origins
+
+
+    def _evaluate(self, verbose):
+        desired_areas = np.array(list(self.subset_sizes.values()))
+        displayed_areas = self._get_subset_areas(self._origins)
+        performance = {
+            "Subset" : list(self.subset_sizes.keys()),
+            "Desired area" : desired_areas,
+            "Displayed area" : displayed_areas,
+        }
+        performance["Absolute difference"] = np.abs(desired_areas - displayed_areas)
+
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            performance["Relative difference"] = np.abs(desired_areas - displayed_areas) / desired_areas
+
+        if verbose:
+            self._pretty_print_performance(performance)
+
+        return performance
+
+
+    def _pretty_print_performance(self, performance):
+        paddings = [len(key) for key in performance]
+        paddings[0] = max(paddings[0], len(str(performance["Subset"][0])))
+        print()
+        print(" | ".join([f"{item:>{pad}}" for item, pad in zip(performance.keys(), paddings)]))
+        for row in zip(*performance.values()):
+            print(" | ".join([f"{item:>{pad}.2f}" if isinstance(item, float) else f"{str(item):>{pad}}" for item, pad in zip(row, paddings)]))
 
 
     def _get_subset_label_positions(self):
