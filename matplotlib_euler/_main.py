@@ -32,10 +32,10 @@ class EulerDiagram(object):
     def __init__(self, subset_sizes, verbose=False, ax=None):
         self.subset_sizes = subset_sizes
         self.set_sizes = self._get_set_sizes()
-        self._radii = self._get_radii()
-        self._origins = self._get_origins(verbose=verbose)
-        self._performance = self._evaluate(verbose=verbose)
         self.plot(ax=ax)
+        self.radii = self._get_radii()
+        self.origins = self._get_origins(verbose=verbose)
+        self.performance = self._evaluate(verbose=verbose)
 
 
     def _get_set_sizes(self):
@@ -62,15 +62,15 @@ class EulerDiagram(object):
         x0, y0 = 0, 0 # venn diagram center
         total_sets = len(self.set_sizes)
         angles = 2 * np.pi * np.linspace(0, 1 - 1/total_sets, total_sets)
-        overlap = 0.5 * np.min(self._radii)
-        distances = self._radii - overlap
+        overlap = 0.5 * np.min(self.radii)
+        distances = self.radii - overlap
         x = x0 + distances * np.cos(angles)
         y = y0 + distances * np.sin(angles)
         return np.c_[x, y]
 
 
     def _get_subset_geometries(self, origins):
-        set_geometries = [Point(*origin).buffer(radius) for origin, radius in zip(origins, self._radii)]
+        set_geometries = [Point(*origin).buffer(radius) for origin, radius in zip(origins, self.radii)]
         output = dict()
         for subset in self.subset_sizes:
             include = intersection_all([set_geometries[ii] for ii, include in enumerate(subset) if include])
@@ -97,7 +97,7 @@ class EulerDiagram(object):
 
             # # Option 2: relative difference
             # # This often results in the optimization routine failing.
-            # minimum_area = 1e-2 * np.pi * np.max(self._radii)**2
+            # minimum_area = 1e-2 * np.pi * np.max(self.radii)**2
             # cost = np.abs(subset_areas - desired_areas) / np.clip(desired_areas, minimum_area, None)
 
             # Option 3: absolute difference of log(area + 1)
@@ -108,18 +108,18 @@ class EulerDiagram(object):
             # Option 4: absolute difference of 1 / area
             # This transformation gives smaller subsets more weight such that
             # small or non-existant subsets are represented accurately.
-            minimum_area = 1e-2 * np.pi * np.max(self._radii)**2
+            minimum_area = 1e-2 * np.pi * np.max(self.radii)**2
             cost = np.abs(1 / (subset_areas + minimum_area) - 1 / (desired_areas + minimum_area))
 
             return np.sum(cost)
 
         # constraints:
-        eps = np.min(self._radii) * 0.001
-        lower_bounds = np.abs(self._radii[np.newaxis, :] - self._radii[:, np.newaxis]) - eps
+        eps = np.min(self.radii) * 0.001
+        lower_bounds = np.abs(self.radii[np.newaxis, :] - self.radii[:, np.newaxis]) - eps
         lower_bounds[lower_bounds < 0] = 0
         lower_bounds = squareform(lower_bounds)
 
-        upper_bounds = self._radii[np.newaxis, :] + self._radii[:, np.newaxis] + eps
+        upper_bounds = self.radii[np.newaxis, :] + self.radii[:, np.newaxis] + eps
         upper_bounds -= np.diag(np.diag(upper_bounds)) # squareform requires zeros on diagonal
         upper_bounds = squareform(upper_bounds)
 
