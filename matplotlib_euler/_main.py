@@ -1,4 +1,5 @@
 import warnings
+import string
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -8,6 +9,7 @@ from scipy.optimize import minimize, NonlinearConstraint
 from shapely import intersection_all, union_all
 from shapely.geometry import Point
 from shapely.ops import polylabel
+from matplotlib.colors import to_rgba, to_rgba_array
 
 
 def get_subset_sizes(sets):
@@ -27,15 +29,61 @@ def get_subset_sizes(sets):
     return output
 
 
+def blend_colors(colors, gamma=2.2):
+    # Adapted from: https://stackoverflow.com/a/29321264/2912349
+    rgba = to_rgba_array(colors)
+    rgb = np.power(np.mean(np.power(rgba[:, :3], gamma), axis=0), 1/gamma)
+    a = np.mean(rgba[:, -1])
+    return np.array([*rgb, a])
+
+
+def rgba_to_grayscale(r, g, b, a=1):
+    # Adapted from: https://stackoverflow.com/a/689547/2912349
+    return (0.299 * r + 0.587 * g + 0.114 * b) * a
+
+
+def get_text_alignment(vector):
+    angle = get_angle(vector, radians=False) % 360
+
+    if (45 <= angle < 135):
+        horizontalalignment = 'center'
+        verticalalignment = 'bottom'
+    elif (135 <= angle < 225):
+        horizontalalignment = 'right'
+        verticalalignment = 'center'
+    elif (225 <= angle < 315):
+        horizontalalignment = 'center'
+        verticalalignment = 'top'
+    else:
+        horizontalalignment = 'left'
+        verticalalignment = 'center'
+
+    return horizontalalignment, verticalalignment
+
+
+def get_angle(vector, radians=True):
+    """Angle of a vector in 2D."""
+    dx, dy = vector
+    angle = np.arctan2(dy, dx)
+    if radians:
+        return angle
+    else:
+        return angle * 360 / (2.0 * np.pi)
+
+
 class EulerDiagram(object):
 
-    def __init__(self, subset_sizes, verbose=False, ax=None):
+    def __init__(self, subset_sizes, set_labels=None, set_colors=None, verbose=False, ax=None):
         self.subset_sizes = subset_sizes
         self.set_sizes = self._get_set_sizes()
-        self.plot(ax=ax)
         self.radii = self._get_radii()
         self.origins = self._get_origins(verbose=verbose)
+        self._subset_geometries = self._get_subset_geometries(self.origins)
         self.performance = self._evaluate(verbose=verbose)
+        self.ax = self._initialize_axis(ax=ax)
+        self.subset_artists = self._draw_subsets(set_colors)
+        self.subset_label_artists = self._draw_subset_labels()
+        self.set_label_artists = self._draw_set_labels(set_labels)
 
 
     def _get_set_sizes(self):
@@ -79,17 +127,13 @@ class EulerDiagram(object):
         return output
 
 
-    def _get_subset_areas(self, origins):
-        return np.array([geometry.area for geometry in self._get_subset_geometries(origins).values()])
-
-
     def _get_origins(self, verbose):
 
         desired_areas = np.array(list(self.subset_sizes.values()))
 
         def cost_function(flattened_origins):
             origins = flattened_origins.reshape(-1, 2)
-            subset_areas = self._get_subset_areas(origins)
+            subset_areas = np.array([geometry.area for geometry in self._get_subset_geometries(origins).values()])
 
             # # Option 1: absolute difference
             # # Probably not the best choice, as small areas are often practically ignored.
@@ -149,7 +193,7 @@ class EulerDiagram(object):
 
     def _evaluate(self, verbose):
         desired_areas = np.array(list(self.subset_sizes.values()))
-        displayed_areas = self._get_subset_areas(self._origins)
+        displayed_areas = np.array([geometry.area for geometry in self._subset_geometries.values()])
         performance = {
             "Subset" : list(self.subset_sizes.keys()),
             "Desired area" : desired_areas,
@@ -176,31 +220,55 @@ class EulerDiagram(object):
             print(" | ".join([f"{item:>{pad}.2f}" if isinstance(item, float) else f"{str(item):>{pad}}" for item, pad in zip(row, paddings)]))
 
 
-    def _get_subset_label_positions(self):
-        "For each non-zero subset, find the point of inaccesibility."
-        subset_geometries = self._get_subset_geometries(self._origins)
-        output = dict()
-        for subset, geometry in subset_geometries.items():
-            if geometry.area > 0:
-                poi = polylabel(geometry)
-                output[subset] = (poi.x, poi.y)
-        return output
-
-
-    def plot(self, ax=None):
+    def _initialize_axis(self, ax=None):
         if ax is None:
             fig, ax = plt.subplots()
-
-        for origin, radius in zip(self._origins, self._radii):
-            ax.add_patch(plt.Circle(origin, radius, alpha=1/len(self.set_sizes)))
-
         ax.set_aspect("equal")
-        ax.autoscale_view()
         ax.axis("off")
+        return ax
 
-        label_positions = self._get_subset_label_positions()
-        for subset, (x, y) in label_positions.items():
-            ax.text(x, y, self.subset_sizes[subset], va="center", ha="center")
+
+    def _draw_subsets(self, set_colors=None):
+        if not set_colors:
+            set_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        subset_artists = dict()
+        for subset, geometry in self._subset_geometries.items():
+            if geometry.area > 0:
+                color = blend_colors([set_colors[ii] for ii, is_superset in enumerate(subset) if is_superset])
+                artist = plt.Polygon(geometry.exterior.coords, color=color)
+                self.ax.add_patch(artist)
+                subset_artists[subset] = artist
+        self.ax.autoscale_view()
+        return subset_artists
+
+
+    def _draw_subset_labels(self):
+        subset_label_artists = dict()
+        for subset, geometry in self._subset_geometries.items():
+            if geometry.area > 0:
+                poi = polylabel(geometry) # point of inaccesibility
+                label = self.subset_sizes[subset]
+                subset_color = to_rgba(self.subset_artists[subset].get_facecolor())
+                color = "black" if rgba_to_grayscale(*subset_color) > 0.5 else "white"
+                subset_label_artists[subset] = self.ax.text(
+                    poi.x, poi.y, label,
+                    color=color,
+                    va="center", ha="center")
+        return subset_label_artists
+
+
+    def _draw_set_labels(self, set_labels, offset=0.1):
+        """Place the set label on the side opposite to the centroid of all other sets."""
+        if not set_labels:
+            set_labels = string.ascii_uppercase[:len(self.set_sizes)]
+
+        set_label_artists = []
+        for ii, label in enumerate(set_labels):
+            delta = self.origins[ii] - np.mean([origin for jj, origin in enumerate(self.origins) if ii != jj])
+            x, y = self.origins[ii] + (1 + offset) * self.radii[ii] * delta / np.linalg.norm(delta)
+            ha, va = get_text_alignment(delta)
+            set_label_artists.append(self.ax.text(x, y, label, ha=ha, va=va))
+        return set_label_artists
 
 
 if __name__ == "__main__":
