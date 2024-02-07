@@ -69,11 +69,18 @@ def get_text_alignment(dx, dy):
 
 class EulerDiagram(object):
 
-    def __init__(self, subset_sizes, set_labels=None, set_colors=None, verbose=False, ax=None):
+    def __init__(
+            self, subset_sizes,
+            set_labels=None,
+            set_colors=None,
+            cost_function_objective="inverse",
+            verbose=False,
+            ax=None,
+    ):
         self.subset_sizes = subset_sizes
         self.set_sizes = self._get_set_sizes()
         self.radii = self._get_radii()
-        self.origins = self._get_origins(verbose=verbose)
+        self.origins = self._get_origins(cost_function_objective, verbose=verbose)
         self._subset_geometries = self._get_subset_geometries(self.origins)
         self.performance = self._evaluate(verbose=verbose)
         self.ax = self._initialize_axis(ax=ax)
@@ -123,7 +130,7 @@ class EulerDiagram(object):
         return output
 
 
-    def _get_origins(self, verbose):
+    def _get_origins(self, objective, verbose):
 
         desired_areas = np.array(list(self.subset_sizes.values()))
 
@@ -131,27 +138,27 @@ class EulerDiagram(object):
             origins = flattened_origins.reshape(-1, 2)
             subset_areas = np.array([geometry.area for geometry in self._get_subset_geometries(origins).values()])
 
-            # # Option 1: absolute difference
-            # # Probably not the best choice, as small areas are often practically ignored.
-            # cost = np.abs(subset_areas - desired_areas)
+            if objective == "simple":
+                cost = subset_areas - desired_areas
 
-            # # Option 2: relative difference
-            # # This often results in the optimization routine failing.
-            # minimum_area = 1e-2 * np.pi * np.max(self.radii)**2
-            # cost = np.abs(subset_areas - desired_areas) / np.clip(desired_areas, minimum_area, None)
+            elif objective == "squared":
+                cost = (subset_areas - desired_areas)**2
 
-            # Option 3: absolute difference of log(area + 1)
-            # This transformation is monotonic increasing but strongly compresses large numbers,
-            # thus allowing small numbers to carry more weight in the optimization.
-            # cost = np.abs(np.log(subset_areas + 1) - np.log(desired_areas + 1))
+            elif objective == "relative":
+                cost = [1 - min(x/y, y/x) if x != y else 0. for x, y in zip(subset_areas, desired_areas)]
 
-            # Option 4: absolute difference of 1 / area
-            # This transformation gives smaller subsets more weight such that
-            # small or non-existant subsets are represented accurately.
-            minimum_area = 1e-2 * np.pi * np.max(self.radii)**2
-            cost = np.abs(1 / (subset_areas + minimum_area) - 1 / (desired_areas + minimum_area))
+            elif objective == "log":
+                cost = np.log(subset_areas + 1) - np.log(desired_areas + 1)
 
-            return np.sum(cost)
+            elif objective == "inverse":
+                eps = 1e-2 * np.pi * np.max(self.radii)**2
+                cost = 1 / (subset_areas + eps) - 1 / (desired_areas + eps)
+            else:
+                msg = f"The provided cost function objective is not implemented: {objective}."
+                msg += "\nAvailable objectives are: 'simple difference', 'squared difference', 'log', 'relative', and 'inverse'."
+                raise NotImplementedError(msg)
+
+            return np.sum(np.abs(cost))
 
         # constraints:
         eps = np.min(self.radii) * 0.001
