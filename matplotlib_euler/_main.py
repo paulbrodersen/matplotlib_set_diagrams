@@ -19,14 +19,14 @@ def get_subset_sizes(sets):
     subset or not.
 
     """
-    output = dict()
+    subset_size = dict()
     for subset_id in list(product(*len(sets) * [(False, True)])):
         if np.any(subset_id):
-            output[subset_id] = len(
+            subset_size[subset_id] = len(
                 set.intersection(*[sets[ii] for ii, include in enumerate(subset_id) if include]) \
                 - set.union(*[sets[ii] for ii, include in enumerate(subset_id) if not include])
             )
-    return output
+    return subset_size
 
 
 def blend_colors(colors, gamma=2.2):
@@ -202,12 +202,12 @@ class EulerDiagram(object):
 
     def _get_subset_geometries(self, origins):
         set_geometries = [Point(*origin).buffer(radius) for origin, radius in zip(origins, self.radii)]
-        output = dict()
+        subset_geometries = dict()
         for subset in self.subset_sizes:
             include = intersection_all([set_geometries[ii] for ii, include in enumerate(subset) if include])
             exclude = union_all([set_geometries[ii] for ii, include in enumerate(subset) if not include])
-            output[subset] = include.difference(exclude)
-        return output
+            subset_geometries[subset] = include.difference(exclude)
+        return subset_geometries
 
 
     def _get_origins(self, objective, verbose):
