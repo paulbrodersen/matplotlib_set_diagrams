@@ -86,14 +86,14 @@ class EulerDiagram(object):
       useful when all subsets have similar sizes.
     - The 'squared' cost (i.e. (x - y)^2) penalises larger area discrepancies.
       Also particularly useful when all subsets have similar sizes.
-    - The 'log' cost (i.e. |log(x + 1) - log(y + 1)|) scales strongly sublinearly
+    - The 'logarithmic' cost (i.e. |log(x + 1) - log(y + 1)|) scales strongly sublinearly
       with the size of the subset. This allows small subsets to affect the
       optimisation more strongly without assigning them the same weight as large subsets.
     - The 'relative' cost (i.e. 1 - min(x/y, y/x)) assigns each subset equal weight.
     - The 'inverse' cost (i.e. |1 / (x + epsilon) - 1 / (y + epsilon)|)
       weighs small subsets stronger than large subsets. This is
       particularly useful when some theoretically possible subsets are
-      absent (and visualizing their absence is important).
+      absent. The epsilon parameter is arbitrarily set to 1% of the largest set size.
 
     Parameters
     ----------
@@ -117,7 +117,7 @@ class EulerDiagram(object):
 
         - 'simple'
         - 'squared'
-        - 'log'
+        - 'logarithmic'
         - 'relative'
         - 'inverse'
 
@@ -227,7 +227,7 @@ class EulerDiagram(object):
             elif objective == "relative":
                 cost = [1 - min(x/y, y/x) if x != y else 0. for x, y in zip(subset_areas, desired_areas)]
 
-            elif objective == "log":
+            elif objective == "logarithmic":
                 cost = np.log(subset_areas + 1) - np.log(desired_areas + 1)
 
             elif objective == "inverse":
@@ -235,7 +235,7 @@ class EulerDiagram(object):
                 cost = 1 / (subset_areas + eps) - 1 / (desired_areas + eps)
             else:
                 msg = f"The provided cost function objective is not implemented: {objective}."
-                msg += "\nAvailable objectives are: 'simple difference', 'squared difference', 'log', 'relative', and 'inverse'."
+                msg += "\nAvailable objectives are: 'simple', 'squared', 'logarithmic', 'relative', and 'inverse'."
                 raise NotImplementedError(msg)
 
             return np.sum(np.abs(cost))
@@ -276,17 +276,31 @@ class EulerDiagram(object):
 
     def _evaluate(self, verbose):
         desired_areas = np.array(list(self.subset_sizes.values()))
-        displayed_areas = np.array([geometry.area for geometry in self._subset_geometries.values()])
+        subset_areas = np.array([geometry.area for geometry in self._subset_geometries.values()])
         performance = {
-            "Subset" : list(self.subset_sizes.keys()),
-            "Desired area" : desired_areas,
-            "Displayed area" : displayed_areas,
+            "subset" : list(self.subset_sizes.keys()),
+            "desired area" : desired_areas,
+            "displayed area" : subset_areas,
         }
-        performance["Absolute difference"] = np.abs(desired_areas - displayed_areas)
 
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=RuntimeWarning)
-            performance["Relative difference"] = np.abs(desired_areas - displayed_areas) / desired_areas
+        def get_cost(objective):
+            if objective == "simple":
+                cost = subset_areas - desired_areas
+            elif objective == "squared":
+                cost = (subset_areas - desired_areas)**2
+            elif objective == "relative":
+                cost = [1 - min(x/y, y/x) if x != y else 0. for x, y in zip(subset_areas, desired_areas)]
+            elif objective == "logarithmic":
+                cost = np.log(subset_areas + 1) - np.log(desired_areas + 1)
+            elif objective == "inverse":
+                eps = 1e-2 * np.pi * np.max(self.radii)**2
+                cost = 1 / (subset_areas + eps) - 1 / (desired_areas + eps)
+            else:
+                raise NotImplementedError
+            return np.abs(cost)
+
+        for objective in ["simple", "squared", "relative", "logarithmic", "inverse"]:
+            performance[objective] = get_cost(objective)
 
         if verbose:
             self._pretty_print_performance(performance)
@@ -296,7 +310,7 @@ class EulerDiagram(object):
 
     def _pretty_print_performance(self, performance):
         paddings = [len(key) for key in performance]
-        paddings[0] = max(paddings[0], len(str(performance["Subset"][0])))
+        paddings[0] = max(paddings[0], len(str(performance["subset"][0])))
         print()
         print(" | ".join([f"{item:>{pad}}" for item, pad in zip(performance.keys(), paddings)]))
         for row in zip(*performance.values()):
