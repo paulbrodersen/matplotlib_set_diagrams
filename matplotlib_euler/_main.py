@@ -95,6 +95,12 @@ class EulerDiagram(object):
       particularly useful when some theoretically possible subsets are
       absent. The epsilon parameter is arbitrarily set to 1% of the largest set size.
 
+    Determining the best cost function objective for a given case can require
+    some trial-and-error. If one or more subsets areas are not represented
+    adequately, print the performance report (with :code:`verbose=True`).
+    This will indicate for each subset the penalty on the remaining discrepancies,
+    and thus facilitate choosing a more appropriate objective for the next iteration.
+
     Parameters
     ----------
     subset_sizes : dict[tuple[bool, ...], float]
@@ -123,7 +129,6 @@ class EulerDiagram(object):
 
     verbose : bool
         Print a report of the optimisation process.
-
     ax : matplotlib axis instance
         The axis to plot onto. If none, a new figure is instantiated.
 
