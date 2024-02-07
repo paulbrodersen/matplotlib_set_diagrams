@@ -89,6 +89,7 @@ class EulerDiagram(object):
     - The 'logarithmic' cost (i.e. |log(x + 1) - log(y + 1)|) scales strongly sublinearly
       with the size of the subset. This allows small subsets to affect the
       optimisation more strongly without assigning them the same weight as large subsets.
+      This is useful when some subsets are much smaller than others.
     - The 'relative' cost (i.e. 1 - min(x/y, y/x)) assigns each subset equal weight.
     - The 'inverse' cost (i.e. |1 / (x + epsilon) - 1 / (y + epsilon)|)
       weighs small subsets stronger than large subsets. This is
@@ -110,7 +111,7 @@ class EulerDiagram(object):
         For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
         whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
     subset_label_formatter : Optional(Callable)
-        The formatter used to create subset labels from subset sizes.
+        The formatter used to create subset labels based on the subset sizes.
         The function should accept an int or float and return a string.
     set_labels : list[str, ...]
         A list of set labels.
