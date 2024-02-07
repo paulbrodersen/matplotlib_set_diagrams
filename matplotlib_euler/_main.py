@@ -232,16 +232,12 @@ class EulerDiagram(object):
 
             if objective == "simple":
                 cost = subset_areas - desired_areas
-
             elif objective == "squared":
                 cost = (subset_areas - desired_areas)**2
-
             elif objective == "relative":
                 cost = [1 - min(x/y, y/x) if x != y else 0. for x, y in zip(subset_areas, desired_areas)]
-
             elif objective == "logarithmic":
                 cost = np.log(subset_areas + 1) - np.log(desired_areas + 1)
-
             elif objective == "inverse":
                 eps = 1e-2 * np.pi * np.max(self.radii)**2
                 cost = 1 / (subset_areas + eps) - 1 / (desired_areas + eps)
@@ -272,7 +268,7 @@ class EulerDiagram(object):
         result = minimize(
             cost_function,
             self._initialize_origins().flatten(),
-            method='SLSQP', # 'COBYLA',
+            method='SLSQP',
             constraints=[distance_between_origins],
             options=dict(disp=verbose, eps=eps)
         )
