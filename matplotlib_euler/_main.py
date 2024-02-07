@@ -42,8 +42,14 @@ def rgba_to_grayscale(r, g, b, a=1):
     return (0.299 * r + 0.587 * g + 0.114 * b) * a
 
 
-def get_text_alignment(vector):
-    angle = get_angle(vector, radians=False) % 360
+def get_text_alignment(dx, dy):
+    """For given arrow (dx, dy), determine the text alignment for a
+    label placed at the arrow head such that the text does not overlap
+    the arrow.
+
+    """
+    angle = np.arctan2(dy, dx) # radians
+    angle = angle / (2.0 * np.pi) * 360 % 360 # degrees
 
     if (45 <= angle < 135):
         horizontalalignment = 'center'
@@ -59,16 +65,6 @@ def get_text_alignment(vector):
         verticalalignment = 'center'
 
     return horizontalalignment, verticalalignment
-
-
-def get_angle(vector, radians=True):
-    """Angle of a vector in 2D."""
-    dx, dy = vector
-    angle = np.arctan2(dy, dx)
-    if radians:
-        return angle
-    else:
-        return angle * 360 / (2.0 * np.pi)
 
 
 class EulerDiagram(object):
