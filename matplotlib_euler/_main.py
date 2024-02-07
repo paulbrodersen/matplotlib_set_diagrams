@@ -270,7 +270,7 @@ class EulerDiagram(object):
         for ii, label in enumerate(set_labels):
             delta = self.origins[ii] - np.mean([origin for jj, origin in enumerate(self.origins) if ii != jj])
             x, y = self.origins[ii] + (1 + offset) * self.radii[ii] * delta / np.linalg.norm(delta)
-            ha, va = get_text_alignment(delta)
+            ha, va = get_text_alignment(*delta)
             set_label_artists.append(self.ax.text(x, y, label, ha=ha, va=va))
         return set_label_artists
 
