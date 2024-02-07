@@ -176,10 +176,12 @@ class EulerDiagram(object):
 
 
     def _get_set_sizes(self):
+        """Compute the size of each set based on the sizes of its constituent sub-sets"""
         return np.sum([size * np.array(subset) for subset, size in subset_sizes.items()], axis=0)
 
 
     def _get_radii(self):
+        """Map set sizes onto circle radii."""
         return np.array([np.sqrt(size / np.pi) for size in self.set_sizes])
 
 
@@ -207,6 +209,7 @@ class EulerDiagram(object):
 
 
     def _get_subset_geometries(self, origins):
+        "Compute each subset polygon as a shapely geometry object."
         set_geometries = [Point(*origin).buffer(radius) for origin, radius in zip(origins, self.radii)]
         subset_geometries = dict()
         for subset in self.subset_sizes:
@@ -217,7 +220,10 @@ class EulerDiagram(object):
 
 
     def _get_origins(self, objective, verbose):
+        """Optimize the placement of circle origins according to the
+        given cost function objective.
 
+        """
         desired_areas = np.array(list(self.subset_sizes.values()))
 
         def cost_function(flattened_origins):
@@ -281,6 +287,7 @@ class EulerDiagram(object):
 
 
     def _evaluate(self, verbose):
+        """Collate the performance report."""
         desired_areas = np.array(list(self.subset_sizes.values()))
         subset_areas = np.array([geometry.area for geometry in self._subset_geometries.values()])
         performance = {
@@ -315,6 +322,7 @@ class EulerDiagram(object):
 
 
     def _pretty_print_performance(self, performance):
+        """Print the performance report."""
         paddings = [len(key) for key in performance]
         paddings[0] = max(paddings[0], len(str(performance["subset"][0])))
         print()
@@ -324,6 +332,11 @@ class EulerDiagram(object):
 
 
     def _initialize_axis(self, ax=None):
+        """Initialize the axis if none provided. Ensure that the
+        aspect is equal such that circles are circles and not
+        ellipses.
+
+        """
         if ax is None:
             fig, ax = plt.subplots()
         ax.set_aspect("equal")
@@ -332,6 +345,7 @@ class EulerDiagram(object):
 
 
     def _draw_subsets(self, set_colors=None):
+        """Draw each subset as a separate polygon patch."""
         if not set_colors:
             set_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
         subset_artists = dict()
@@ -346,10 +360,15 @@ class EulerDiagram(object):
 
 
     def _draw_subset_labels(self, formatter):
+        """Map subset sizes to strings using the provided formatter
+        and then place at them centred on the point of inaccesibility
+        (POI) of the corresponding polygon.
+
+        """
         subset_label_artists = dict()
         for subset, geometry in self._subset_geometries.items():
             if geometry.area > 0:
-                poi = polylabel(geometry) # point of inaccesibility
+                poi = polylabel(geometry)
                 label = formatter(self.subset_sizes[subset])
                 subset_color = to_rgba(self.subset_artists[subset].get_facecolor())
                 color = "black" if rgba_to_grayscale(*subset_color) > 0.5 else "white"
@@ -361,7 +380,10 @@ class EulerDiagram(object):
 
 
     def _draw_set_labels(self, set_labels, offset=0.1):
-        """Place the set label on the side opposite to the centroid of all other sets."""
+        """Place the set label on the side opposite to the centroid of
+        all other sets.
+
+        """
         if not set_labels:
             set_labels = string.ascii_uppercase[:len(self.set_sizes)]
 
