@@ -71,6 +71,7 @@ class EulerDiagram(object):
 
     def __init__(
             self, subset_sizes,
+            subset_label_formatter=lambda x : str(x),
             set_labels=None,
             set_colors=None,
             cost_function_objective="inverse",
@@ -85,7 +86,7 @@ class EulerDiagram(object):
         self.performance = self._evaluate(verbose=verbose)
         self.ax = self._initialize_axis(ax=ax)
         self.subset_artists = self._draw_subsets(set_colors)
-        self.subset_label_artists = self._draw_subset_labels()
+        self.subset_label_artists = self._draw_subset_labels(subset_label_formatter)
         self.set_label_artists = self._draw_set_labels(set_labels)
 
 
@@ -245,12 +246,12 @@ class EulerDiagram(object):
         return subset_artists
 
 
-    def _draw_subset_labels(self):
+    def _draw_subset_labels(self, formatter):
         subset_label_artists = dict()
         for subset, geometry in self._subset_geometries.items():
             if geometry.area > 0:
                 poi = polylabel(geometry) # point of inaccesibility
-                label = self.subset_sizes[subset]
+                label = formatter(self.subset_sizes[subset])
                 subset_color = to_rgba(self.subset_artists[subset].get_facecolor())
                 color = "black" if rgba_to_grayscale(*subset_color) > 0.5 else "white"
                 subset_label_artists[subset] = self.ax.text(
