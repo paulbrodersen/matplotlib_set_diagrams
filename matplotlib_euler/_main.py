@@ -324,11 +324,12 @@ class EulerDiagram(object):
     def _pretty_print_performance(self, performance):
         """Print the performance report."""
         paddings = [len(key) for key in performance]
-        paddings[0] = max(paddings[0], len(str(performance["subset"][0])))
+        paddings[0] = max(len(str("subset")), len(str(performance["subset"][0]))) # the subset IDs are often longer than the string "subset"
         print()
         print(" | ".join([f"{item:>{pad}}" for item, pad in zip(performance.keys(), paddings)]))
         for row in zip(*performance.values()):
             print(" | ".join([f"{item:>{pad}.2f}" if isinstance(item, float) else f"{str(item):>{pad}}" for item, pad in zip(row, paddings)]))
+        print()
 
 
     def _initialize_axis(self, ax=None):
