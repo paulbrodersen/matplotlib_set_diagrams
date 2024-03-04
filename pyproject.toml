@@ -1,0 +1,55 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "matplotlib-euler"
+dynamic = ["version"]
+authors = [
+        {name = "Paul Brodersen", email = "paulbrodersen+matplotlibeuler@gmail.com"},
+]
+description = "Python drawing utilities for area-proportional Euler diagrams visualizing the relationships between two or more sets."
+readme = "README.md"
+keywords = [
+         "matplotlib",
+         "Euler diagram", 
+         "Venn diagram",
+         "set", 
+         "visualisation",
+]
+license = {text = "GNU General Public License v3 (GPLv3)"}
+classifiers = [
+            "Development Status :: 4 - Beta",
+            "Intended Audience :: Science/Research",
+            "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+            "Operating System :: OS Independent",
+            "Programming Language :: Python :: 3",
+            "Topic :: Scientific/Engineering :: Visualization",
+]
+requires-python = ">3.6"
+dependencies = [
+               "numpy",
+               "scipy", 
+               "matplotlib >= 1.5",
+               "shapely",
+]
+
+[project.urls]
+Repository = "https://github.com/paulbrodersen/matplotlib-euler"
+Documentation =  "https://matplotlib-euler.readthedocs.io/en/latest/"
+
+[project.optional-dependencies]
+tests = [
+      "pytest",
+      "pytest-mpl",
+]
+doc = [
+    "sphinx",
+    "sphinx-rtd-theme",
+    "numpydoc",
+    "sphinx-gallery",
+    "Pillow",
+]
+
+[tool.setuptools.dynamic]
+version = {attr = "matplotlib_euler.__version__"}
