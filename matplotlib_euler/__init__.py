@@ -42,7 +42,7 @@ __author__ = "Paul Brodersen"
 __email__ = "paulbrodersen+matplotlibeuler@gmail.com"
 
 
-from _main.py import (
+from ._main import (
     EulerDiagram,
     get_subset_sizes,
 )
