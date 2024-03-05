@@ -22,10 +22,9 @@ def get_subset_sizes(sets):
     subset_size = dict()
     for subset_id in list(product(*len(sets) * [(False, True)])):
         if np.any(subset_id):
-            subset_size[subset_id] = len(
-                set.intersection(*[sets[ii] for ii, include in enumerate(subset_id) if include]) \
-                - set.union(*[sets[ii] for ii, include in enumerate(subset_id) if not include])
-            )
+            include_elements = set.intersection(*[sets[ii] for ii, include in enumerate(subset_id) if include])
+            exclude_elements = set.union(*[sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
+            subset_size[subset_id] = len(include_elements - exclude_elements)
     return subset_size
 
 
