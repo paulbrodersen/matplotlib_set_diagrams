@@ -10,6 +10,8 @@ from shapely import intersection_all, union_all
 from shapely.geometry import Point
 from shapely.ops import polylabel
 from matplotlib.colors import to_rgba, to_rgba_array
+from matplotlib.path import Path
+from wordcloud import WordCloud
 
 
 def blend_colors(colors, gamma=2.2):
@@ -491,6 +493,172 @@ class EulerDiagram(EulerDiagramBase):
         return subset_size
 
 
+class EulerWordCloud(EulerDiagram):
+    """Create an area-proportional Euler diagram visualising the relationships
+    between two or more sets. Fill each subset area with a wordcloud of the
+    items in the subset.
+
+    Sets are represented through overlapping circles, and the relative
+    arrangement of these circles is determined through a minimisation
+    procedure that attempts to match subset sizes to the corresponding
+    areas formed by circle overlaps in the diagram. However, it is not
+    always possible to find a perfect solution. In these cases, the
+    choice of cost function objective strongly determines which
+    discrepancies between the subset sizes and the corresponding areas
+    likely remain:
+
+    - With the 'simple' cost function objective, the optimisation simply
+      minimizes the difference between the desired subset areas y and
+      the current subset areas x (i.e. |x - y|). This is particularly
+      useful when all subsets have similar sizes.
+    - The 'squared' cost (i.e. (x - y)^2) penalises larger area discrepancies.
+      Also particularly useful when all subsets have similar sizes.
+    - The 'logarithmic' cost (i.e. |log(x + 1) - log(y + 1)|) scales strongly sublinearly
+      with the size of the subset. This allows small subsets to affect the
+      optimisation more strongly without assigning them the same weight as large subsets.
+      This is useful when some subsets are much smaller than others.
+    - The 'relative' cost (i.e. 1 - min(x/y, y/x)) assigns each subset equal weight.
+    - The 'inverse' cost (i.e. |1 / (x + epsilon) - 1 / (y + epsilon)|)
+      weighs small subsets stronger than large subsets. This is
+      particularly useful when some theoretically possible subsets are
+      absent. The epsilon parameter is arbitrarily set to 1% of the largest set size.
+
+    Determining the best cost function objective for a given case can require
+    some trial-and-error. If one or more subsets areas are not represented
+    adequately, print the performance report (with :code:`verbose=True`).
+    This will indicate for each subset the penalty on the remaining discrepancies,
+    and thus facilitate choosing a more appropriate objective for the next iteration.
+
+    Parameters
+    ----------
+    sets : list[set[Any]]
+        The sets.
+    minimum_resolution : int
+        The minimum extent of the wordcloud image in pixels.
+    wordcloud_kwargs : dict[str, Any]
+        Key word arguments passed through to WordCloud.
+    subset_label_formatter : Optional[Callable]
+        The formatter used to create subset labels based on the subset sizes.
+        The function should accept an int or float and return a string.
+    set_labels : list[str]
+        A list of set labels.
+        If none, defaults to the letters of the alphabet (capitalized).
+    set_colors : Optional[list[Any]]
+        A corresponding list of matplotlib colors.
+        If none, defaults to the default matplotlib color cycle.
+    cost_function_objective : str
+        The cost function objective; one of:
+
+        - 'simple'
+        - 'squared'
+        - 'logarithmic'
+        - 'relative'
+        - 'inverse'
+
+    verbose : bool
+        Print a report of the optimisation process.
+    ax : matplotlib axis instance
+        The axis to plot onto. If none, a new figure is instantiated.
+
+    Attributes
+    ----------
+    sets : list[set[Any]]
+        The sets.
+    subsets : dict[tuple[bool], set]
+        The dictionary mapping each subset ID to the items in the subset.
+        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
+        each entry in the tuple indicates if the corresponding set is a superset of the subset.
+        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
+        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
+    subset_sizes : dict[tuple[bool], float]
+        The dictionary mapping each subset to its desired size.
+    set_sizes : list[int]
+        The set sizes.
+    radii : list[float]
+        The radii of the corresponding circles.
+    origins : list[float]
+        The origins of the corresponding circles.
+    performance : dict[str, list[float]]
+        A table summarising the performance of the optimisation.
+    subset_artists : dict[tuple[bool], matplotlib.patches.Polygon]
+        The matplotlib Polygon patches representing each subset.
+    subset_label_artists : dict[tuple[bool], matplotlib.text.Text]
+        The matplotlib text objects used to label each subset.
+        The alpha of the text objects is set to zero so that wordclouds remain fully visible.
+    set_label_artists : list[matplotlib.text.Text]
+        The matplotlib text objects used to label each set.
+
+    """
+
+    def __init__(self, sets, minimum_resolution=300, wordcloud_kwargs=dict(), *args, **kwargs):
+        super().__init__(sets, *args, **kwargs)
+        self.subsets = self._get_subsets()
+        self.wordcloud = self._get_wordcloud(minimum_resolution, wordcloud_kwargs)
+
+
+    def _draw_subsets(self):
+        """Draw subsets with transparent faces."""
+        subset_artists = super()._draw_subsets()
+        for subset, artist in subset_artists.items():
+            artist.set_facecolor(np.zeros((4)))
+        return subset_artists
+
+
+    def _draw_subset_labels(self, formatter):
+        subset_label_artists = super()._draw_subset_labels(formatter)
+        for subset, artist in subset_label_artists.items():
+            artist.set_alpha(0)
+        return subset_label_artists
+
+
+    def _get_subsets(self):
+        """Creates a dictionary mapping subsets to set items. The
+        subset IDs are tuples of booleans, with each boolean
+        indicating if the corresponding input set is a superset of the
+        subset or not.
+        """
+        subsets = dict()
+        for subset_id in list(product(*len(self.sets) * [(False, True)])):
+            if np.any(subset_id):
+                include_elements = set.intersection(*[self.sets[ii] for ii, include in enumerate(subset_id) if include])
+                exclude_elements = set.union(*[self.sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
+                subsets[subset_id] = include_elements - exclude_elements
+        return subsets
+
+
+    def _get_wordcloud(self, minimum_resolution, wordcloud_kwargs):
+
+        xmin, xmax = self.ax.get_xlim()
+        ymin, ymax = self.ax.get_ylim()
+        dx = xmax - xmin
+        dy = ymax - ymin
+
+        if dx < dy:
+            x_resolution = minimum_resolution
+            y_resolution = int(dy / dx * minimum_resolution)
+        else:
+            x_resolution = int(dx / dy * minimum_resolution)
+            y_resolution = minimum_resolution
+
+        X, Y = np.meshgrid(np.linspace(xmin, xmax, x_resolution),
+                           np.linspace(ymin, ymax, y_resolution))
+        XY = np.c_[X.ravel(), Y.ravel()]
+
+        img = np.zeros((y_resolution, x_resolution, 4))
+        for subset, geometry in self._subset_geometries.items():
+            if geometry.area > 0:
+                path = Path(geometry.exterior.coords)
+                mask = path.contains_points(XY).reshape((y_resolution, x_resolution))
+                mask = 255 * np.invert(mask).astype(np.uint8) # black is filled by WordCloud
+                mask = np.flipud(mask) # image origin is in the upper left
+                subset_color = tuple(int(255 * channel) for channel in self.subset_colors[subset])
+                wc = WordCloud(mask=mask,
+                               mode="RGBA", background_color=None,
+                               color_func=lambda *args, **kwargs : subset_color,
+                               **wordcloud_kwargs)
+                img += wc.generate(" ".join(self.subsets[subset])).to_array() / 255
+
+        return self.ax.imshow(img, interpolation="bilinear", extent=(xmin, xmax, ymin, ymax))
 
 
 
