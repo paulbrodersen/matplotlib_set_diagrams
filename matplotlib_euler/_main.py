@@ -176,7 +176,7 @@ class EulerDiagram(object):
 
     def _get_set_sizes(self):
         """Compute the size of each set based on the sizes of its constituent sub-sets"""
-        return np.sum([size * np.array(subset) for subset, size in subset_sizes.items()], axis=0)
+        return np.sum([size * np.array(subset) for subset, size in self.subset_sizes.items()], axis=0)
 
 
     def _get_radii(self):
