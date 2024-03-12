@@ -12,22 +12,6 @@ from shapely.ops import polylabel
 from matplotlib.colors import to_rgba, to_rgba_array
 
 
-def get_subset_sizes(sets):
-    """Creates a dictionary mapping subsets to set items. The
-    subset IDs are tuples of booleans, with each boolean
-    indicating if the corresponding input set is a superset of the
-    subset or not.
-
-    """
-    subset_size = dict()
-    for subset_id in list(product(*len(sets) * [(False, True)])):
-        if np.any(subset_id):
-            include_elements = set.intersection(*[sets[ii] for ii, include in enumerate(subset_id) if include])
-            exclude_elements = set.union(*[sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
-            subset_size[subset_id] = len(include_elements - exclude_elements)
-    return subset_size
-
-
 def blend_colors(colors, gamma=2.2):
     # Adapted from: https://stackoverflow.com/a/29321264/2912349
     rgba = to_rgba_array(colors)
@@ -66,9 +50,9 @@ def get_text_alignment(dx, dy):
     return horizontalalignment, verticalalignment
 
 
-class EulerDiagram(object):
+class EulerDiagramBase(object):
     """Create an area-proportional Euler diagram visualising the relationships
-    between two or more sets.
+    between two or more sets given the subset sizes.
 
     Sets are represented through overlapping circles, and the relative
     arrangement of these circles is determined through a minimisation
@@ -396,6 +380,114 @@ class EulerDiagram(object):
             ha, va = get_text_alignment(*delta)
             set_label_artists.append(self.ax.text(x, y, label, ha=ha, va=va))
         return set_label_artists
+
+
+class EulerDiagram(EulerDiagramBase):
+    """Create an area-proportional Euler diagram visualising the relationships
+    between two or more sets.
+
+    Sets are represented through overlapping circles, and the relative
+    arrangement of these circles is determined through a minimisation
+    procedure that attempts to match subset sizes to the corresponding
+    areas formed by circle overlaps in the diagram. However, it is not
+    always possible to find a perfect solution. In these cases, the
+    choice of cost function objective strongly determines which
+    discrepancies between the subset sizes and the corresponding areas
+    likely remain:
+
+    - With the 'simple' cost function objective, the optimisation simply
+      minimizes the difference between the desired subset areas y and
+      the current subset areas x (i.e. |x - y|). This is particularly
+      useful when all subsets have similar sizes.
+    - The 'squared' cost (i.e. (x - y)^2) penalises larger area discrepancies.
+      Also particularly useful when all subsets have similar sizes.
+    - The 'logarithmic' cost (i.e. |log(x + 1) - log(y + 1)|) scales strongly sublinearly
+      with the size of the subset. This allows small subsets to affect the
+      optimisation more strongly without assigning them the same weight as large subsets.
+      This is useful when some subsets are much smaller than others.
+    - The 'relative' cost (i.e. 1 - min(x/y, y/x)) assigns each subset equal weight.
+    - The 'inverse' cost (i.e. |1 / (x + epsilon) - 1 / (y + epsilon)|)
+      weighs small subsets stronger than large subsets. This is
+      particularly useful when some theoretically possible subsets are
+      absent. The epsilon parameter is arbitrarily set to 1% of the largest set size.
+
+    Determining the best cost function objective for a given case can require
+    some trial-and-error. If one or more subsets areas are not represented
+    adequately, print the performance report (with :code:`verbose=True`).
+    This will indicate for each subset the penalty on the remaining discrepancies,
+    and thus facilitate choosing a more appropriate objective for the next iteration.
+
+    Parameters
+    ----------
+    sets : list[set]
+        The sets.
+    subset_label_formatter : Optional[Callable]
+        The formatter used to create subset labels based on the subset sizes.
+        The function should accept an int or float and return a string.
+    set_labels : list[str]
+        A list of set labels.
+        If none, defaults to the letters of the alphabet (capitalized).
+    set_colors : Optional[list[Any]]
+        A corresponding list of matplotlib colors.
+        If none, defaults to the default matplotlib color cycle.
+    cost_function_objective : str
+        The cost function objective; one of:
+
+        - 'simple'
+        - 'squared'
+        - 'logarithmic'
+        - 'relative'
+        - 'inverse'
+
+    verbose : bool
+        Print a report of the optimisation process.
+    ax : matplotlib axis instance
+        The axis to plot onto. If none, a new figure is instantiated.
+
+    Attributes
+    ----------
+    subset_sizes : dict[tuple[bool, ...], float]
+        The dictionary mapping each subset to its desired size.
+        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
+        each entry in the tuple indicates if the corresponding set is a superset of the subset.
+        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
+        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
+    set_sizes : list[int]
+        The set sizes.
+    radii : list[float]
+        The radii of the corresponding circles.
+    origins : list[float]
+        The origins of the corresponding circles.
+    performance : dict[str, list[float]]
+        A table summarising the performance of the optimisation.
+    subset_artists : dict[tuple[bool], matplotlib.patches.Polygon]
+        The matplotlib Polygon patches representing each subset.
+    subset_label_artists : dict[tuple[bool], matplotlib.text.Text]
+        The matplotlib text objects used to label each subset.
+    set_label_artists : list[matplotlib.text.Text]
+        The matplotlib text objects used to label each set.
+
+    """
+    def __init__(self, sets, *args, **kwargs):
+        self.sets = [set(item) for item in sets]
+        subset_sizes = self._get_subset_sizes()
+        super().__init__(subset_sizes, *args, **kwargs)
+
+
+    def _get_subset_sizes(self):
+        """Creates a dictionary mapping subsets to subset size. The
+        subset IDs are tuples of booleans, with each boolean
+        indicating if the corresponding input set is a superset of the
+        subset or not.
+
+        """
+        subset_size = dict()
+        for subset_id in list(product(*len(self.sets) * [(False, True)])):
+            if np.any(subset_id):
+                include_elements = set.intersection(*[self.sets[ii] for ii, include in enumerate(subset_id) if include])
+                exclude_elements = set.union(*[self.sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
+                subset_size[subset_id] = len(include_elements - exclude_elements)
+        return subset_size
 
 
 
