@@ -661,13 +661,76 @@ class EulerWordCloud(EulerDiagram):
         return self.ax.imshow(img, interpolation="bilinear", extent=(xmin, xmax, ymin, ymax))
 
 
+if __name__ == "__main__":
 
+    # # canonical 2-way Euler diagram
     # subset_sizes = {
+    #     (1, 0) : 1,
+    #     (0, 1) : 1,
+    #     (1, 1) : 0.5,
     # }
+    # EulerDiagramBase(subset_sizes, cost_function_objective="relative", verbose=True)
 
+    # # a is superset of b
     # subset_sizes = {
+    #     (1, 0) : 1,
+    #     (0, 1) : 0,
+    #     (1, 1) : 0.5,
     # }
+    # EulerDiagramBase(subset_sizes, cost_function_objective="relative", verbose=True)
 
+    # # canonical 3-way Euler diagramase
     # subset_sizes = {
+    #     (1, 0, 0) : 1,
+    #     (0, 1, 0) : 1,
+    #     (0, 0, 1) : 1,
+    #     (1, 1, 0) : 0.5,
+    #     (1, 0, 1) : 0.5,
+    #     (0, 1, 1) : 0.5,
+    #     (1, 1, 1) : 0.25,
     # }
+    # EulerDiagramBase(subset_sizes, cost_function_objective="relative", verbose=True)
+
+    # # Initialization with proper sets.
+    # sets = [
+    #     {"Lorem", "ipsum", "dolor"},
+    #     {"dolor", "sit", "amet"}
+    # ]
+    # EulerDiagram(sets, cost_function_objective="relative", verbose=True)
+
+    # # No intersection.
+    # sets = [
+    #     {"Lorem", "ipsum", "dolor"},
+    #     {"sit", "amet"}
+    # ]
+    # EulerDiagram(sets, cost_function_objective="relative", verbose=True)
+
+    # # Empty sets.
+    # sets = [
+    #     {"Lorem", "ipsum", "dolor", "sit", "amet"},
+    #     {}
+    # ]
+    # EulerDiagram(sets, cost_function_objective="relative", verbose=True)
+
+    # EulerDiagram with word clouds on top
+    test_string_1 = """Lorem ipsum dolor sit amet, consetetur
+    sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore
+    et dolore magna aliquyam erat, sed diam voluptua."""
+
+    test_string_2 = """At vero eos et accusam et justo duo dolores et
+    ea rebum. Stet clita kasd gubergren, no sea takimata sanctus
+    est. Lorem ipsum dolor sit amet."""
+
+    # tokenize words
+    sets = []
+    for test_string in [test_string_1, test_string_2]:
+        # get a word list
+        words = test_string.split(' ')
+        # remove non alphanumeric characters
+        words = [''.join(ch for ch in word if ch.isalnum()) for word in words]
+        # convert to all lower case
+        words = [word.lower() for word in words]
+        sets.append(set(words))
+
+    EulerWordCloud(sets)
     plt.show()
