@@ -103,16 +103,16 @@ class EulerDiagram(object):
 
     Parameters
     ----------
-    subset_sizes : dict[tuple[bool, ...], float]
+    subset_sizes : dict[tuple[bool], float]
         A dictionary mapping each subset to its desired size.
         Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
         each entry in the tuple indicates if the corresponding set is a superset of the subset.
         For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
         whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
-    subset_label_formatter : Optional(Callable)
+    subset_label_formatter : Optional[Callable]
         The formatter used to create subset labels based on the subset sizes.
         The function should accept an int or float and return a string.
-    set_labels : list[str, ...]
+    set_labels : list[str]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
     set_colors : Optional[list[Any]]
@@ -134,7 +134,7 @@ class EulerDiagram(object):
 
     Attributes
     ----------
-    subset_sizes : dict[tuple[bool, ...], float]
+    subset_sizes : dict[tuple[bool], float]
         The dictionary mapping each subset to its desired size.
     set_sizes : list[int]
         The set sizes.
