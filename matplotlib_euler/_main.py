@@ -153,7 +153,8 @@ class EulerDiagramBase(object):
         self._subset_geometries = self._get_subset_geometries(self.origins)
         self.performance = self._evaluate(verbose=verbose)
         self.ax = self._initialize_axis(ax=ax)
-        self.subset_artists = self._draw_subsets(set_colors)
+        self.subset_colors = self._get_subset_colors(set_colors)
+        self.subset_artists = self._draw_subsets()
         self.subset_label_artists = self._draw_subset_labels(subset_label_formatter)
         self.set_label_artists = self._draw_set_labels(set_labels)
 
