@@ -340,15 +340,21 @@ class EulerDiagram(object):
         return ax
 
 
-    def _draw_subsets(self, set_colors=None):
-        """Draw each subset as a separate polygon patch."""
+    def _get_subset_colors(self, set_colors=None):
         if not set_colors:
             set_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        subset_colors = dict()
+        for subset in self.subset_sizes:
+            subset_colors[subset] = blend_colors([set_colors[ii] for ii, is_superset in enumerate(subset) if is_superset])
+        return subset_colors
+
+
+    def _draw_subsets(self):
+        """Draw each subset as a separate polygon patch."""
         subset_artists = dict()
         for subset, geometry in self._subset_geometries.items():
             if geometry.area > 0:
-                color = blend_colors([set_colors[ii] for ii, is_superset in enumerate(subset) if is_superset])
-                artist = plt.Polygon(geometry.exterior.coords, color=color)
+                artist = plt.Polygon(geometry.exterior.coords, color=self.subset_colors[subset])
                 self.ax.add_patch(artist)
                 subset_artists[subset] = artist
         self.ax.autoscale_view()
