@@ -150,7 +150,7 @@ class EulerDiagramBase(object):
     ):
         self.subset_sizes = subset_sizes
         self.set_sizes = self._get_set_sizes()
-        self.radii = self._get_radii()
+        self.radii = self._initialize_radii()
         self.origins = self._get_origins(cost_function_objective, verbose=verbose)
         self._subset_geometries = self._get_subset_geometries(self.origins)
         self.performance = self._evaluate(verbose=verbose)
@@ -166,7 +166,7 @@ class EulerDiagramBase(object):
         return np.sum([size * np.array(subset) for subset, size in self.subset_sizes.items()], axis=0)
 
 
-    def _get_radii(self):
+    def _initialize_radii(self):
         """Map set sizes onto circle radii."""
         return np.array([np.sqrt(size / np.pi) for size in self.set_sizes])
 
