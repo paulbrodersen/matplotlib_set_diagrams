@@ -14,6 +14,7 @@ from matplotlib_euler._main import (
     get_text_alignment,
     EulerDiagramBase,
     EulerDiagram,
+    EulerWordCloud,
 )
 
 def test_blend_colors():
@@ -57,4 +58,10 @@ def test_EulerDiagram():
     # EulerDiagram._get_subset_sizes
     pass
 
+
+def test_EulerWordCloud():
+    # EulerWordCloud._draw_subsets
+    # EulerWordCloud._draw_subset_labels
+    # EulerWordCloud._get_subsets
+    # EulerWordCloud._get_wordcloud
     pass
