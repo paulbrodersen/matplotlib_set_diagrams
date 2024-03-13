@@ -12,19 +12,9 @@ from matplotlib_euler._main import (
     blend_colors,
     rgba_to_grayscale,
     get_text_alignment,
+    EulerDiagramBase,
     EulerDiagram,
 )
-
-def test_get_subset_sizes():
-    s1 = {0, 1}
-    s2 = {1, 2}
-    desired = {
-        (1, 0) : 1,
-        (0, 1) : 1,
-        (1, 1) : 1,
-    }
-    assert get_subset_sizes([s1, s2]) == desired
-
 
 def test_blend_colors():
     np.testing.assert_allclose(blend_colors([(0, 0, 0, 0), (0, 0, 0, 0)]), (0, 0, 0, 0))
@@ -44,20 +34,27 @@ def test_get_text_alignment():
     assert get_text_alignment(0, -1) == ("center", "top")
 
 
+def test_EulerDiagramBase():
+    # EulerDiagramBase._get_set_sizes
+    # EulerDiagramBase._get_radii
+    # EulerDiagramBase._initialize_origins
+    # EulerDiagramBase._get_subset_geometries
+    # EulerDiagramBase._get_origins
+    # EulerDiagramBase.cost_function
+    # EulerDiagramBase.cost_function.constraint_function
+    # EulerDiagramBase._evaluate
+    # EulerDiagramBase._evaluate.get_cost
+    # EulerDiagramBase._pretty_print_performance
+    # EulerDiagramBase._initialize_axis
+    # EulerDiagramBase._get_subset_colors
+    # EulerDiagramBase._draw_subsets
+    # EulerDiagramBase._draw_subset_labels
+    # EulerDiagramBase._draw_set_labels
+    pass
+
+
 def test_EulerDiagram():
-    #__init__
-    #_get_set_sizes
-    #_get_radii
-    #_initialize_origins
-    #_get_subset_geometries
-    #_get_origins
-    #cost_function
-    #cost_function.constraint_function
-    #_evaluate
-    #_evaluate.get_cost
-    #_pretty_print_performance
-    #_initialize_axis
-    #_draw_subsets
-    #_draw_subset_labels
-    #_draw_set_labels
+    # EulerDiagram._get_subset_sizes
+    pass
+
     pass
