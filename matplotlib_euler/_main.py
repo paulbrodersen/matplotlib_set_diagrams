@@ -677,7 +677,7 @@ if __name__ == "__main__":
     #     (0, 1) : 0,
     #     (1, 1) : 0.5,
     # }
-    # EulerDiagramBase(subset_sizes, cost_function_objective="relative", verbose=True)
+    # EulerDiagramBase(subset_sizes)
 
     # # canonical 3-way Euler diagramase
     # subset_sizes = {
@@ -689,29 +689,31 @@ if __name__ == "__main__":
     #     (0, 1, 1) : 0.5,
     #     (1, 1, 1) : 0.25,
     # }
-    # EulerDiagramBase(subset_sizes, cost_function_objective="relative", verbose=True)
+    # EulerDiagramBase(subset_sizes)
 
+    # # --------------------------------------------------------------------------------
     # # Initialization with proper sets.
     # sets = [
     #     {"Lorem", "ipsum", "dolor"},
     #     {"dolor", "sit", "amet"}
     # ]
-    # EulerDiagram(sets, cost_function_objective="relative", verbose=True)
+    # EulerDiagram(sets)
 
     # # No intersection.
     # sets = [
     #     {"Lorem", "ipsum", "dolor"},
     #     {"sit", "amet"}
     # ]
-    # EulerDiagram(sets, cost_function_objective="relative", verbose=True)
+    # EulerDiagram(sets)
 
     # # Empty sets.
     # sets = [
     #     {"Lorem", "ipsum", "dolor", "sit", "amet"},
     #     {}
     # ]
-    # EulerDiagram(sets, cost_function_objective="relative", verbose=True)
+    # EulerDiagram(sets)
 
+    # --------------------------------------------------------------------------------
     # EulerDiagram with word clouds on top
     test_string_1 = """Lorem ipsum dolor sit amet, consetetur
     sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore
@@ -733,4 +735,5 @@ if __name__ == "__main__":
         sets.append(set(words))
 
     EulerWordCloud(sets)
+
     plt.show()
