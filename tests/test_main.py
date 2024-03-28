@@ -12,6 +12,7 @@ from matplotlib_euler._main import (
     blend_colors,
     rgba_to_grayscale,
     get_text_alignment,
+    SetDiagram,
     EulerDiagramBase,
     EulerDiagram,
     EulerWordCloud,
@@ -35,31 +36,37 @@ def test_get_text_alignment():
     assert get_text_alignment(0, -1) == ("center", "top")
 
 
+def test_SetDiagram():
+    # SetDiagram.__init__
+    # SetDiagram._get_subset_geometries
+    # SetDiagram._get_subset_colors
+    # SetDiagram._initialize_axis
+    # SetDiagram._draw_subsets
+    # SetDiagram._draw_subset_labels
+    # SetDiagram._draw_set_labels
+    pass
+
+
 def test_EulerDiagramBase():
+    # EulerDiagramBase.__init__
+    # EulerDiagramBase._get_layout
+    # EulerDiagramBase._initialize_layout
     # EulerDiagramBase._get_set_sizes
-    # EulerDiagramBase._get_radii
+    # EulerDiagramBase._initialize_radii
     # EulerDiagramBase._initialize_origins
-    # EulerDiagramBase._get_subset_geometries
-    # EulerDiagramBase._get_origins
-    # EulerDiagramBase.cost_function
-    # EulerDiagramBase.cost_function.constraint_function
-    # EulerDiagramBase._evaluate
-    # EulerDiagramBase._evaluate.get_cost
-    # EulerDiagramBase._pretty_print_performance
-    # EulerDiagramBase._initialize_axis
-    # EulerDiagramBase._get_subset_colors
-    # EulerDiagramBase._draw_subsets
-    # EulerDiagramBase._draw_subset_labels
-    # EulerDiagramBase._draw_set_labels
+    # EulerDiagramBase._optimize_layout
+    # EulerDiagramBase._optimize_layout.cost_function
+    # EulerDiagramBase._optimize_layout.constraint_function
+    # EulerDiagramBase._get_set_labels
+    # EulerDiagramBase._get_subset_labels
     pass
 
 
 def test_EulerDiagram():
+    # EulerDiagram.__init__
     # EulerDiagram._get_subset_sizes
-    pass
-
-
-def test_EulerWordCloud():
+    # EulerWordCloud
+    # EulerWordCloud.__init__
     # EulerWordCloud._draw_subsets
     # EulerWordCloud._draw_subset_labels
     # EulerWordCloud._get_subsets
