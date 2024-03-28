@@ -52,7 +52,94 @@ def get_text_alignment(dx, dy):
     return horizontalalignment, verticalalignment
 
 
-class EulerDiagramBase(object):
+class SetDiagram:
+
+    def __init__(self, origins, radii, subset_labels=None,
+                 set_labels=None, set_colors=None, ax=None):
+
+        subset_ids = [subset_id for subset_id in list(product(*len(origins) * [(False, True)])) if True in subset_id]
+        self.subset_geometries = self._get_subset_geometries(subset_ids, origins, radii)
+        self.subset_colors = self._get_subset_colors(subset_ids, set_colors)
+        self.ax = self._initialize_axis(ax=ax)
+        self.subset_artists = self._draw_subsets(self.subset_geometries, self.subset_colors, self.ax)
+        self.subset_label_artists = self._draw_subset_labels(subset_labels, self.subset_geometries, self.subset_colors, self.ax)
+        self.set_label_artists = self._draw_set_labels(set_labels, origins, radii, self.ax)
+
+
+    def _get_subset_geometries(self, subsets, origins, radii):
+        "Compute each subset polygon as a shapely geometry object."
+        set_geometries = [Point(*origin).buffer(radius) for origin, radius in zip(origins, radii)]
+        subset_geometries = dict()
+        for subset in subsets:
+            include = intersection_all([set_geometries[ii] for ii, include in enumerate(subset) if include])
+            exclude = union_all([set_geometries[ii] for ii, include in enumerate(subset) if not include])
+            subset_geometries[subset] = include.difference(exclude)
+        return subset_geometries
+
+
+    def _get_subset_colors(self, subsets, set_colors=None):
+        if not set_colors:
+            set_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+        subset_colors = dict()
+        for subset in subsets:
+            subset_colors[subset] = blend_colors([set_colors[ii] for ii, is_superset in enumerate(subset) if is_superset])
+        return subset_colors
+
+
+    def _initialize_axis(self, ax=None):
+        """Initialize the axis if none provided. Ensure that the
+        aspect is equal such that circles are circles and not
+        ellipses.
+
+        """
+        if ax is None:
+            fig, ax = plt.subplots()
+        ax.set_aspect("equal")
+        ax.axis("off")
+        return ax
+
+
+    def _draw_subsets(self, subset_geometries, subset_colors, ax):
+        """Draw each subset as a separate polygon patch."""
+        subset_artists = dict()
+        for subset, geometry in subset_geometries.items():
+            if geometry.area > 0:
+                artist = plt.Polygon(geometry.exterior.coords, color=subset_colors[subset])
+                ax.add_patch(artist)
+                subset_artists[subset] = artist
+        ax.autoscale_view()
+        return subset_artists
+
+
+    def _draw_subset_labels(self, subset_labels, subset_geometries, subset_colors, ax):
+        """Place subset labels centred on the point of inaccesibility
+        (POI) of the corresponding polygon.
+        """
+        subset_label_artists = dict()
+        for subset, label in subset_labels.items():
+            geometry = subset_geometries[subset]
+            if geometry.area > 0:
+                poi = polylabel(geometry)
+                fontcolor = "black" if rgba_to_grayscale(*subset_colors[subset]) > 0.5 else "white"
+                subset_label_artists[subset] = ax.text(
+                    poi.x, poi.y, label,
+                    color=fontcolor, va="center", ha="center"
+                )
+        return subset_label_artists
+
+
+    def _draw_set_labels(self, set_labels, origins, radii, ax, offset=0.1):
+        """Place the set label on the side opposite to the centroid of all other sets."""
+        set_label_artists = []
+        for ii, label in enumerate(set_labels):
+            delta = origins[ii] - np.mean([origin for jj, origin in enumerate(origins) if ii != jj])
+            x, y = origins[ii] + (1 + offset) * radii[ii] * delta / np.linalg.norm(delta)
+            ha, va = get_text_alignment(*delta)
+            set_label_artists.append(ax.text(x, y, label, ha=ha, va=va))
+        return set_label_artists
+
+
+class EulerDiagramBase(SetDiagram):
     """Create an area-proportional Euler diagram visualising the relationships
     between two or more sets given the subset sizes.
 
@@ -141,7 +228,7 @@ class EulerDiagramBase(object):
 
     def __init__(
             self, subset_sizes,
-            subset_label_formatter=lambda x : str(x),
+            subset_label_formatter=lambda subset, size : str(size),
             set_labels=None,
             set_colors=None,
             cost_function_objective="inverse",
@@ -149,29 +236,47 @@ class EulerDiagramBase(object):
             ax=None,
     ):
         self.subset_sizes = subset_sizes
-        self.set_sizes = self._get_set_sizes()
-        self.radii = self._initialize_radii()
-        self.origins = self._get_origins(cost_function_objective, verbose=verbose)
-        self._subset_geometries = self._get_subset_geometries(self.origins)
-        self.performance = self._evaluate(verbose=verbose)
-        self.ax = self._initialize_axis(ax=ax)
-        self.subset_colors = self._get_subset_colors(set_colors)
-        self.subset_artists = self._draw_subsets()
-        self.subset_label_artists = self._draw_subset_labels(subset_label_formatter)
-        self.set_label_artists = self._draw_set_labels(set_labels)
+
+        origins, radii = self._get_layout(
+            self.subset_sizes, cost_function_objective, verbose)
+
+        subset_labels = self._get_subset_labels(
+            self.subset_sizes, subset_label_formatter)
+
+        if set_labels is None:
+            set_labels = self._get_set_labels(len(origins))
+
+        super().__init__(
+            origins, radii, subset_labels,
+            set_labels, set_colors, ax)
 
 
-    def _get_set_sizes(self):
+    def _get_layout(self, subset_sizes, cost_function_objective, verbose):
+        origins, radii = self._initialize_layout(subset_sizes)
+        origins, radii = self._optimize_layout(subset_sizes, origins, radii,
+                                               cost_function_objective,
+                                               verbose=verbose)
+        return origins, radii
+
+
+    def _initialize_layout(self, subset_sizes):
+        set_sizes = self._get_set_sizes(subset_sizes)
+        radii = self._initialize_radii(set_sizes)
+        origins = self._initialize_origins(radii)
+        return origins, radii
+
+
+    def _get_set_sizes(self, subset_sizes):
         """Compute the size of each set based on the sizes of its constituent sub-sets"""
-        return np.sum([size * np.array(subset) for subset, size in self.subset_sizes.items()], axis=0)
+        return np.sum([size * np.array(subset) for subset, size in subset_sizes.items()], axis=0)
 
 
-    def _initialize_radii(self):
+    def _initialize_radii(self, areas):
         """Map set sizes onto circle radii."""
-        return np.array([np.sqrt(size / np.pi) for size in self.set_sizes])
+        return np.array([np.sqrt(area / np.pi) for area in areas])
 
 
-    def _initialize_origins(self):
+    def _initialize_origins(self, radii):
         """The optimisation procedure uses gradient descent to find
         the circle arrangement that best matches the desired subset
         areas. If a subset area is zero, there is no gradient to
@@ -184,37 +289,28 @@ class EulerDiagramBase(object):
         circles overlap.
 
         """
-        x0, y0 = 0, 0 # venn diagram center
-        total_sets = len(self.set_sizes)
+        x0, y0 = 0, 0 # diagram center
+        total_sets = len(radii)
         angles = 2 * np.pi * np.linspace(0, 1 - 1/total_sets, total_sets)
-        overlap = 0.5 * np.min(self.radii)
-        distances = self.radii - overlap
+        overlap = 0.5 * np.min(radii)
+        distances = radii - overlap
         x = x0 + distances * np.cos(angles)
         y = y0 + distances * np.sin(angles)
         return np.c_[x, y]
 
 
-    def _get_subset_geometries(self, origins):
-        "Compute each subset polygon as a shapely geometry object."
-        set_geometries = [Point(*origin).buffer(radius) for origin, radius in zip(origins, self.radii)]
-        subset_geometries = dict()
-        for subset in self.subset_sizes:
-            include = intersection_all([set_geometries[ii] for ii, include in enumerate(subset) if include])
-            exclude = union_all([set_geometries[ii] for ii, include in enumerate(subset) if not include])
-            subset_geometries[subset] = include.difference(exclude)
-        return subset_geometries
-
-
-    def _get_origins(self, objective, verbose):
+    def _optimize_layout(self, subset_sizes, origins, radii, objective, verbose):
         """Optimize the placement of circle origins according to the
         given cost function objective.
 
         """
-        desired_areas = np.array(list(self.subset_sizes.values()))
+        desired_areas = np.array(list(subset_sizes.values()))
 
         def cost_function(flattened_origins):
             origins = flattened_origins.reshape(-1, 2)
-            subset_areas = np.array([geometry.area for geometry in self._get_subset_geometries(origins).values()])
+            subset_areas = np.array(
+                [geometry.area for geometry in self._get_subset_geometries(subset_sizes.keys(), origins, radii).values()]
+            )
 
             if objective == "simple":
                 cost = subset_areas - desired_areas
@@ -225,7 +321,7 @@ class EulerDiagramBase(object):
             elif objective == "logarithmic":
                 cost = np.log(subset_areas + 1) - np.log(desired_areas + 1)
             elif objective == "inverse":
-                eps = 1e-2 * np.pi * np.max(self.radii)**2
+                eps = 1e-2 * np.sum(desired_areas)
                 cost = 1 / (subset_areas + eps) - 1 / (desired_areas + eps)
             else:
                 msg = f"The provided cost function objective is not implemented: {objective}."
@@ -235,12 +331,12 @@ class EulerDiagramBase(object):
             return np.sum(np.abs(cost))
 
         # constraints:
-        eps = np.min(self.radii) * 0.001
-        lower_bounds = np.abs(self.radii[np.newaxis, :] - self.radii[:, np.newaxis]) - eps
+        eps = np.min(radii) * 0.001
+        lower_bounds = np.abs(radii[np.newaxis, :] - radii[:, np.newaxis]) - eps
         lower_bounds[lower_bounds < 0] = 0
         lower_bounds = squareform(lower_bounds)
 
-        upper_bounds = self.radii[np.newaxis, :] + self.radii[:, np.newaxis] + eps
+        upper_bounds = radii[np.newaxis, :] + radii[:, np.newaxis] + eps
         upper_bounds -= np.diag(np.diag(upper_bounds)) # squareform requires zeros on diagonal
         upper_bounds = squareform(upper_bounds)
 
@@ -253,19 +349,19 @@ class EulerDiagramBase(object):
 
         result = minimize(
             cost_function,
-            self._initialize_origins().flatten(),
+            origins.flatten(),
             method='SLSQP',
             constraints=[distance_between_origins],
             options=dict(disp=verbose, eps=eps)
         )
 
         if not result.success:
-            print("Warning: could not compute circle positions for given subsets.")
-            print(f"scipy.optimize.minimize: {result.message}.")
+            warnings.warn("Warning: could not compute circle positions for given subsets.")
+            warnings.warn(f"scipy.optimize.minimize: {result.message}.")
 
         origins = result.x.reshape((-1, 2))
 
-        return origins
+        return origins, radii
 
 
     def _evaluate(self, verbose):
@@ -301,6 +397,8 @@ class EulerDiagramBase(object):
             self._pretty_print_performance(performance)
 
         return performance
+    def _get_set_labels(self, total_sets):
+        return string.ascii_uppercase[:total_sets]
 
 
     def _pretty_print_performance(self, performance):
@@ -314,44 +412,6 @@ class EulerDiagramBase(object):
         print()
 
 
-    def _initialize_axis(self, ax=None):
-        """Initialize the axis if none provided. Ensure that the
-        aspect is equal such that circles are circles and not
-        ellipses.
-
-        """
-        if ax is None:
-            fig, ax = plt.subplots()
-        ax.set_aspect("equal")
-        ax.axis("off")
-        return ax
-
-
-    def _get_subset_colors(self, set_colors=None):
-        if not set_colors:
-            set_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
-        subset_colors = dict()
-        for subset in self.subset_sizes:
-            subset_colors[subset] = blend_colors([set_colors[ii] for ii, is_superset in enumerate(subset) if is_superset])
-        return subset_colors
-
-
-    def _draw_subsets(self):
-        """Draw each subset as a separate polygon patch."""
-        subset_artists = dict()
-        for subset, geometry in self._subset_geometries.items():
-            if geometry.area > 0:
-                artist = plt.Polygon(geometry.exterior.coords, color=self.subset_colors[subset])
-                self.ax.add_patch(artist)
-                subset_artists[subset] = artist
-        self.ax.autoscale_view()
-        return subset_artists
-
-
-    def _draw_subset_labels(self, formatter):
-        """Map subset sizes to strings using the provided formatter
-        and then place at them centred on the point of inaccesibility
-        (POI) of the corresponding polygon.
 
         """
         subset_label_artists = dict()
@@ -368,21 +428,12 @@ class EulerDiagramBase(object):
         return subset_label_artists
 
 
-    def _draw_set_labels(self, set_labels, offset=0.1):
-        """Place the set label on the side opposite to the centroid of
-        all other sets.
-
-        """
-        if not set_labels:
-            set_labels = string.ascii_uppercase[:len(self.set_sizes)]
-
-        set_label_artists = []
-        for ii, label in enumerate(set_labels):
-            delta = self.origins[ii] - np.mean([origin for jj, origin in enumerate(self.origins) if ii != jj])
-            x, y = self.origins[ii] + (1 + offset) * self.radii[ii] * delta / np.linalg.norm(delta)
-            ha, va = get_text_alignment(*delta)
-            set_label_artists.append(self.ax.text(x, y, label, ha=ha, va=va))
-        return set_label_artists
+    def _get_subset_labels(self, subset_sizes, formatter):
+        """Map subset sizes to strings using the provided formatter."""
+        subset_labels = dict()
+        for subset, size in subset_sizes.items():
+            subset_labels[subset] = formatter(subset, size)
+        return subset_labels
 
 
 class EulerDiagram(EulerDiagramBase):
@@ -472,12 +523,12 @@ class EulerDiagram(EulerDiagramBase):
 
     """
     def __init__(self, sets, *args, **kwargs):
-        self.sets = [set(item) for item in sets]
-        subset_sizes = self._get_subset_sizes()
+        sets = [set(item) for item in sets]
+        subset_sizes = self._get_subset_sizes(sets)
         super().__init__(subset_sizes, *args, **kwargs)
 
 
-    def _get_subset_sizes(self):
+    def _get_subset_sizes(self, sets):
         """Creates a dictionary mapping subsets to subset size. The
         subset IDs are tuples of booleans, with each boolean
         indicating if the corresponding input set is a superset of the
@@ -485,10 +536,10 @@ class EulerDiagram(EulerDiagramBase):
 
         """
         subset_size = dict()
-        for subset_id in list(product(*len(self.sets) * [(False, True)])):
+        for subset_id in list(product(*len(sets) * [(False, True)])):
             if np.any(subset_id):
-                include_elements = set.intersection(*[self.sets[ii] for ii, include in enumerate(subset_id) if include])
-                exclude_elements = set.union(*[self.sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
+                include_elements = set.intersection(*[sets[ii] for ii, include in enumerate(subset_id) if include])
+                exclude_elements = set.union(*[sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
                 subset_size[subset_id] = len(include_elements - exclude_elements)
         return subset_size
 
@@ -592,36 +643,36 @@ class EulerWordCloud(EulerDiagram):
 
     def __init__(self, sets, minimum_resolution=300, wordcloud_kwargs=dict(), *args, **kwargs):
         super().__init__(sets, *args, **kwargs)
-        self.subsets = self._get_subsets()
+        self.subsets = self._get_subsets(sets)
         self.wordcloud = self._get_wordcloud(minimum_resolution, wordcloud_kwargs)
 
 
-    def _draw_subsets(self):
+    def _draw_subsets(self, *args, **kwargs):
         """Draw subsets with transparent faces."""
-        subset_artists = super()._draw_subsets()
+        subset_artists = super()._draw_subsets(*args, **kwargs)
         for subset, artist in subset_artists.items():
             artist.set_facecolor(np.zeros((4)))
         return subset_artists
 
 
-    def _draw_subset_labels(self, formatter):
-        subset_label_artists = super()._draw_subset_labels(formatter)
+    def _draw_subset_labels(self, *args, **kwargs):
+        subset_label_artists = super()._draw_subset_labels(*args, **kwargs)
         for subset, artist in subset_label_artists.items():
             artist.set_alpha(0)
         return subset_label_artists
 
 
-    def _get_subsets(self):
+    def _get_subsets(self, sets):
         """Creates a dictionary mapping subsets to set items. The
         subset IDs are tuples of booleans, with each boolean
         indicating if the corresponding input set is a superset of the
         subset or not.
         """
         subsets = dict()
-        for subset_id in list(product(*len(self.sets) * [(False, True)])):
+        for subset_id in list(product(*len(sets) * [(False, True)])):
             if np.any(subset_id):
-                include_elements = set.intersection(*[self.sets[ii] for ii, include in enumerate(subset_id) if include])
-                exclude_elements = set.union(*[self.sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
+                include_elements = set.intersection(*[sets[ii] for ii, include in enumerate(subset_id) if include])
+                exclude_elements = set.union(*[sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
                 subsets[subset_id] = include_elements - exclude_elements
         return subsets
 
@@ -645,15 +696,14 @@ class EulerWordCloud(EulerDiagram):
         XY = np.c_[X.ravel(), Y.ravel()]
 
         img = np.zeros((y_resolution, x_resolution, 4))
-        for subset, geometry in self._subset_geometries.items():
+        for subset, geometry in self.subset_geometries.items():
             if geometry.area > 0:
                 path = Path(geometry.exterior.coords)
                 mask = path.contains_points(XY).reshape((y_resolution, x_resolution))
                 mask = 255 * np.invert(mask).astype(np.uint8) # black is filled by WordCloud
                 mask = np.flipud(mask) # image origin is in the upper left
                 subset_color = tuple(int(255 * channel) for channel in self.subset_colors[subset])
-                wc = WordCloud(mask=mask,
-                               mode="RGBA", background_color=None,
+                wc = WordCloud(mask=mask, mode="RGBA", background_color=None,
                                color_func=lambda *args, **kwargs : subset_color,
                                **wordcloud_kwargs)
                 img += wc.generate(" ".join(self.subsets[subset])).to_array() / 255
