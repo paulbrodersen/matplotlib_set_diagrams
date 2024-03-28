@@ -1,11 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Matplotlib-Euler --- Euler diagrams in Python.
+# Matplotlib Set Diagrams --- Venn and Euler diagrams in Python.
 
-# Copyright (C) 2024 Paul Brodersen <paulbrodersen+matplotlibeuler@gmail.com>
+# Copyright (C) 2024 Paul Brodersen <paulbrodersen+matplotlib_set_diagrams@gmail.com>
 
-# Author: Paul Brodersen <paulbrodersen+matplotlibeuler@gmail.com>
+# Author: Paul Brodersen <paulbrodersen+matplotlib_set_diagrams@gmail.com>
 
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -20,10 +20,12 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-"""Matplotlib-Euler
-================
+"""Matplotlib Set Diagrams
+=======================
 
-A python library to plot area-proportional [Euler
+A python library to plot [Venn
+diagrams](https://en.wikipedia.org/wiki/Venn_diagram) and
+area-proportional [Euler
 diagrams](https://en.wikipedia.org/wiki/Euler_diagram). Euler diagrams
 are similar to Venn diagrams, in as much as they visualize set
 relationships. However, unlike Venn diagrams, which show all possible
@@ -39,15 +41,17 @@ developed
 
 __version__ = "0.0.0"
 __author__ = "Paul Brodersen"
-__email__ = "paulbrodersen+matplotlibeuler@gmail.com"
+__email__ = "paulbrodersen+matplotlib_set_diagrams@gmail.com"
 
 
 from ._main import (
+    EulerDiagramBase,
     EulerDiagram,
-    get_subset_sizes,
+    EulerWordCloud,
 )
 
 __all__ = [
+    "EulerDiagramBase",
     "EulerDiagram",
-    "get_subset_sizes",
+    "EulerWordCloud",
 ]

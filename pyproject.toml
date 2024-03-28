@@ -3,12 +3,12 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "matplotlib-euler"
+name = "matplotlib_set_diagrams"
 dynamic = ["version"]
 authors = [
-        {name = "Paul Brodersen", email = "paulbrodersen+matplotlibeuler@gmail.com"},
+        {name = "Paul Brodersen", email = "paulbrodersen+matplotlib_set_diagrams@gmail.com"},
 ]
-description = "Python drawing utilities for area-proportional Euler diagrams visualizing the relationships between two or more sets."
+description = "Python drawing utilities for Venn and Euler diagrams visualizing the relationships between two or more sets."
 readme = "README.md"
 keywords = [
          "matplotlib",
@@ -30,13 +30,13 @@ requires-python = ">3.6"
 dependencies = [
                "numpy",
                "scipy", 
-               "matplotlib >= 1.5",
+               "matplotlib",
                "shapely",
 ]
 
 [project.urls]
-Repository = "https://github.com/paulbrodersen/matplotlib-euler"
-Documentation =  "https://matplotlib-euler.readthedocs.io/en/latest/"
+Repository = "https://github.com/paulbrodersen/matplotlib_set_diagrams"
+Documentation =  "https://matplotlib-set-diagrams.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
 tests = [
@@ -52,4 +52,4 @@ doc = [
 ]
 
 [tool.setuptools.dynamic]
-version = {attr = "matplotlib_euler.__version__"}
+version = {attr = "matplotlib_set_diagrams.__version__"}

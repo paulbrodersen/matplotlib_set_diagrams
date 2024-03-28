@@ -7,8 +7,7 @@ import pytest
 import numpy as np
 import matplotlib.pyplot as plt
 
-from matplotlib_euler._main import (
-    get_subset_sizes,
+from matplotlib_set_diagrams._main import (
     blend_colors,
     rgba_to_grayscale,
     get_text_alignment,
@@ -65,7 +64,10 @@ def test_EulerDiagramBase():
 def test_EulerDiagram():
     # EulerDiagram.__init__
     # EulerDiagram._get_subset_sizes
-    # EulerWordCloud
+    pass
+
+
+def test_EulerWordCloud():
     # EulerWordCloud.__init__
     # EulerWordCloud._draw_subsets
     # EulerWordCloud._draw_subset_labels
