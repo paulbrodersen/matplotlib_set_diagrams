@@ -52,6 +52,36 @@ def get_text_alignment(dx, dy):
     return horizontalalignment, verticalalignment
 
 
+def evaluate_layout(subset_sizes, subset_geometries, verbose=True):
+    """Evaluate the layout of diagram instance w.r.t. different cost function objectives."""
+
+    desired_areas = np.array(list(subset_sizes.values()))
+    subset_areas = np.array([geometry.area for geometry in subset_geometries.values()])
+    eps = 1e-2 * np.sum(desired_areas)
+
+    performance = {
+        "subset" : list(subset_sizes.keys()),
+        "desired area" : desired_areas,
+        "displayed area" : subset_areas,
+        "simple" : np.abs(subset_areas - desired_areas),
+        "squared" : (subset_areas - desired_areas)**2,
+        "relative" : np.abs([1 - min(x/y, y/x) if x != y else 0. for x, y in zip(subset_areas, desired_areas)]),
+        "logarithmic" : np.abs(np.log(subset_areas + 1) - np.log(desired_areas + 1)),
+        "inverse" : np.abs(1 / (subset_areas + eps) - 1 / (desired_areas + eps)),
+    }
+
+    if verbose: # pretty print results
+        paddings = [len(key) for key in performance]
+        paddings[0] = np.max([len(str(key)) for key in performance["subset"]]) # subset IDs are equally long or longer than the string "subset" (=="(0, 0)")
+        print()
+        print(" | ".join([f"{item:>{pad}}" for item, pad in zip(performance.keys(), paddings)]))
+        for row in zip(*performance.values()):
+            print(" | ".join([f"{item:>{pad}.2f}" if isinstance(item, float) else f"{str(item):>{pad}}" for item, pad in zip(row, paddings)]))
+        print()
+
+    return performance
+
+
 class SetDiagram:
 
     def __init__(self, origins, radii, subset_labels=None,
@@ -364,68 +394,8 @@ class EulerDiagramBase(SetDiagram):
         return origins, radii
 
 
-    def _evaluate(self, verbose):
-        """Collate the performance report."""
-        desired_areas = np.array(list(self.subset_sizes.values()))
-        subset_areas = np.array([geometry.area for geometry in self._subset_geometries.values()])
-        performance = {
-            "subset" : list(self.subset_sizes.keys()),
-            "desired area" : desired_areas,
-            "displayed area" : subset_areas,
-        }
-
-        def get_cost(objective):
-            if objective == "simple":
-                cost = subset_areas - desired_areas
-            elif objective == "squared":
-                cost = (subset_areas - desired_areas)**2
-            elif objective == "relative":
-                cost = [1 - min(x/y, y/x) if x != y else 0. for x, y in zip(subset_areas, desired_areas)]
-            elif objective == "logarithmic":
-                cost = np.log(subset_areas + 1) - np.log(desired_areas + 1)
-            elif objective == "inverse":
-                eps = 1e-2 * np.pi * np.max(self.radii)**2
-                cost = 1 / (subset_areas + eps) - 1 / (desired_areas + eps)
-            else:
-                raise NotImplementedError
-            return np.abs(cost)
-
-        for objective in ["simple", "squared", "relative", "logarithmic", "inverse"]:
-            performance[objective] = get_cost(objective)
-
-        if verbose:
-            self._pretty_print_performance(performance)
-
-        return performance
     def _get_set_labels(self, total_sets):
         return string.ascii_uppercase[:total_sets]
-
-
-    def _pretty_print_performance(self, performance):
-        """Print the performance report."""
-        paddings = [len(key) for key in performance]
-        paddings[0] = max(len(str("subset")), len(str(performance["subset"][0]))) # the subset IDs are often longer than the string "subset"
-        print()
-        print(" | ".join([f"{item:>{pad}}" for item, pad in zip(performance.keys(), paddings)]))
-        for row in zip(*performance.values()):
-            print(" | ".join([f"{item:>{pad}.2f}" if isinstance(item, float) else f"{str(item):>{pad}}" for item, pad in zip(row, paddings)]))
-        print()
-
-
-
-        """
-        subset_label_artists = dict()
-        for subset, geometry in self._subset_geometries.items():
-            if geometry.area > 0:
-                poi = polylabel(geometry)
-                label = formatter(self.subset_sizes[subset])
-                subset_color = to_rgba(self.subset_artists[subset].get_facecolor())
-                color = "black" if rgba_to_grayscale(*subset_color) > 0.5 else "white"
-                subset_label_artists[subset] = self.ax.text(
-                    poi.x, poi.y, label,
-                    color=color,
-                    va="center", ha="center")
-        return subset_label_artists
 
 
     def _get_subset_labels(self, subset_sizes, formatter):
@@ -719,7 +689,8 @@ if __name__ == "__main__":
     #     (0, 1) : 1,
     #     (1, 1) : 0.5,
     # }
-    # EulerDiagramBase(subset_sizes, cost_function_objective="relative", verbose=True)
+    # diagram = EulerDiagramBase(subset_sizes)
+    # evaluate_layout(diagram.subset_sizes, diagram.subset_geometries, verbose=True)
 
     # # a is superset of b
     # subset_sizes = {
