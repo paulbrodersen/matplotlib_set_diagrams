@@ -48,10 +48,14 @@ from ._main import (
     EulerDiagramBase,
     EulerDiagram,
     EulerWordCloud,
+    VennDiagram,
+    VennWordCloud,
 )
 
 __all__ = [
     "EulerDiagramBase",
     "EulerDiagram",
     "EulerWordCloud",
+    "VennDiagram",
+    "VennWordCloud",
 ]

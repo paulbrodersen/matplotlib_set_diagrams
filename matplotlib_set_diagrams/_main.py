@@ -681,6 +681,122 @@ class EulerWordCloud(EulerDiagram):
         return self.ax.imshow(img, interpolation="bilinear", extent=(xmin, xmax, ymin, ymax))
 
 
+class VennDiagram(EulerDiagram):
+    """Create an area-equal Venn diagram visualising the relationships
+    between two or more sets.
+
+    Sets are represented through overlapping circles. The size of a
+    subset is indicated by the label of the corresponding patch; the
+    size of the patch, however, is not indicative of the size of the
+    subset, such that even zero-size subsets can be represented.
+
+    Parameters
+    ----------
+    sets : list[set]
+        The sets.
+    subset_label_formatter : Optional[Callable]
+        The formatter used to create subset labels based on the subset sizes.
+        The function should accept an int or float and return a string.
+    set_labels : list[str]
+        A list of set labels.
+        If none, defaults to the letters of the alphabet (capitalized).
+    set_colors : Optional[list[Any]]
+        A corresponding list of matplotlib colors.
+        If none, defaults to the default matplotlib color cycle.
+    ax : matplotlib axis instance
+        The axis to plot onto. If none, a new figure is instantiated.
+
+    Attributes
+    ----------
+    subset_sizes : dict[tuple[bool, ...], float]
+        The dictionary mapping each subset to its desired size.
+        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
+        each entry in the tuple indicates if the corresponding set is a superset of the subset.
+        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
+        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
+    set_sizes : list[int]
+        The set sizes.
+    radii : list[float]
+        The radii of the corresponding circles.
+    origins : list[float]
+        The origins of the corresponding circles.
+    subset_artists : dict[tuple[bool], matplotlib.patches.Polygon]
+        The matplotlib Polygon patches representing each subset.
+    subset_label_artists : dict[tuple[bool], matplotlib.text.Text]
+        The matplotlib text objects used to label each subset.
+    set_label_artists : list[matplotlib.text.Text]
+        The matplotlib text objects used to label each set.
+
+    """
+
+    def _get_layout(self, subset_sizes, *args, **kwargs):
+        # # Option 1: all subsets are equal size
+        # subset_sizes = {subset : 1 for subset in subset_sizes}
+        # Option 2: intersections half in size with each superset
+        subset_sizes = {subset : 1 / 2**(np.sum(subset) - 1) for subset in subset_sizes}
+        return super()._get_layout(subset_sizes, cost_function_objective="simple", verbose=False)
+
+
+class VennWordCloud(EulerWordCloud, VennDiagram):
+    """Create an area-equal Venn diagram visualising the relationships
+    between two or more sets. Fill each subset area with a wordcloud
+    of the items in the subset.
+
+    Sets are represented through overlapping circles. The size of the
+    patch corresponding to each subset is not indicative of the size
+    of the subset, such that even zero-size subsets can be
+    represented.
+
+    Parameters
+    ----------
+    sets : list[set[Any]]
+        The sets.
+    minimum_resolution : int
+        The minimum extent of the wordcloud image in pixels.
+    wordcloud_kwargs : dict[str, Any]
+        Key word arguments passed through to WordCloud.
+    subset_label_formatter : Optional[Callable]
+        The formatter used to create subset labels based on the subset sizes.
+        The function should accept an int or float and return a string.
+    set_labels : list[str]
+        A list of set labels.
+        If none, defaults to the letters of the alphabet (capitalized).
+    set_colors : Optional[list[Any]]
+        A corresponding list of matplotlib colors.
+        If none, defaults to the default matplotlib color cycle.
+    ax : matplotlib axis instance
+        The axis to plot onto. If none, a new figure is instantiated.
+
+    Attributes
+    ----------
+    sets : list[set[Any]]
+        The sets.
+    subsets : dict[tuple[bool], set]
+        The dictionary mapping each subset ID to the items in the subset.
+        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
+        each entry in the tuple indicates if the corresponding set is a superset of the subset.
+        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
+        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
+    subset_sizes : dict[tuple[bool], float]
+        The dictionary mapping each subset to its desired size.
+    set_sizes : list[int]
+        The set sizes.
+    radii : list[float]
+        The radii of the corresponding circles.
+    origins : list[float]
+        The origins of the corresponding circles.
+    subset_artists : dict[tuple[bool], matplotlib.patches.Polygon]
+        The matplotlib Polygon patches representing each subset.
+    subset_label_artists : dict[tuple[bool], matplotlib.text.Text]
+        The matplotlib text objects used to label each subset.
+        The alpha of the text objects is set to zero so that wordclouds remain fully visible.
+    set_label_artists : list[matplotlib.text.Text]
+        The matplotlib text objects used to label each set.
+
+    """
+    pass
+
+
 if __name__ == "__main__":
 
     # # canonical 2-way Euler diagram
@@ -734,15 +850,45 @@ if __name__ == "__main__":
     # ]
     # EulerDiagram(sets)
 
-    # --------------------------------------------------------------------------------
-    # EulerDiagram with word clouds on top
+    # # --------------------------------------------------------------------------------
+    # # EulerDiagram with word clouds on top
+    # test_string_1 = """Lorem ipsum dolor sit amet, consetetur
+    # sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore
+    # et dolore magna aliquyam erat, sed diam voluptua."""
+
+    # test_string_2 = """At vero eos et accusam et justo duo dolores et
+    # ea rebum. Stet clita kasd gubergren, no sea takimata sanctus
+    # est. Lorem ipsum dolor sit amet."""
+
+    # # tokenize words
+    # sets = []
+    # for test_string in [test_string_1, test_string_2]:
+    #     # get a word list
+    #     words = test_string.split(' ')
+    #     # remove non alphanumeric characters
+    #     words = [''.join(ch for ch in word if ch.isalnum()) for word in words]
+    #     # convert to all lower case
+    #     words = [word.lower() for word in words]
+    #     sets.append(set(words))
+
+    # EulerWordCloud(sets)
+
+    #--------------------------------------------------------------------------------
+    # Venn diagram
+
+    # canonical 2-way Venn diagram
+    VennDiagram([{0, 1}, {1, 2}])
+
+    # canonical 3-way Venn diagram
+    VennDiagram([{0, 1, 2, 3}, {0, 1, 4, 5}, {0, 2, 4, 6}])
+
+    # WordCloud
     test_string_1 = """Lorem ipsum dolor sit amet, consetetur
     sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore
     et dolore magna aliquyam erat, sed diam voluptua."""
 
-    test_string_2 = """At vero eos et accusam et justo duo dolores et
-    ea rebum. Stet clita kasd gubergren, no sea takimata sanctus
-    est. Lorem ipsum dolor sit amet."""
+    test_string_2 = """Lorem ipsum dolor sit amet. At vero eos et
+    accusam et justo duo dolores et ea rebum. """
 
     # tokenize words
     sets = []
@@ -755,6 +901,6 @@ if __name__ == "__main__":
         words = [word.lower() for word in words]
         sets.append(set(words))
 
-    EulerWordCloud(sets)
+    VennWordCloud(sets)
 
     plt.show()

@@ -15,7 +15,10 @@ from matplotlib_set_diagrams._main import (
     EulerDiagramBase,
     EulerDiagram,
     EulerWordCloud,
+    VennDiagram,
+    VennWordCloud,
 )
+
 
 def test_blend_colors():
     np.testing.assert_allclose(blend_colors([(0, 0, 0, 0), (0, 0, 0, 0)]), (0, 0, 0, 0))
@@ -73,4 +76,14 @@ def test_EulerWordCloud():
     # EulerWordCloud._draw_subset_labels
     # EulerWordCloud._get_subsets
     # EulerWordCloud._get_wordcloud
+    pass
+
+
+def test_VennDiagram():
+    # VennDiagram._get_layout
+    pass
+
+
+def test_VennWordCloud():
+    # nothing to test
     pass
