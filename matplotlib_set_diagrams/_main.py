@@ -1,9 +1,9 @@
-import warnings
-import string
 import numpy as np
 import matplotlib.pyplot as plt
 
+from warnings import warn
 from itertools import product
+from string import ascii_uppercase
 from scipy.spatial.distance import pdist, squareform
 from scipy.optimize import minimize, NonlinearConstraint
 from shapely import intersection_all, union_all
@@ -390,8 +390,8 @@ class EulerDiagramBase(SetDiagram):
         )
 
         if not result.success:
-            warnings.warn("Warning: could not compute circle positions for given subsets.")
-            warnings.warn(f"scipy.optimize.minimize: {result.message}.")
+            warn("Warning: could not compute circle positions for given subsets.")
+            warn(f"scipy.optimize.minimize: {result.message}.")
 
         origins = result.x.reshape((-1, 2))
 
@@ -399,7 +399,7 @@ class EulerDiagramBase(SetDiagram):
 
 
     def _get_set_labels(self, total_sets):
-        return string.ascii_uppercase[:total_sets]
+        return ascii_uppercase[:total_sets]
 
 
     def _get_subset_labels(self, subset_sizes, formatter):
