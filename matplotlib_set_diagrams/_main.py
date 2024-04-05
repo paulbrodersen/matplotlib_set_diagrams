@@ -166,7 +166,7 @@ class SetDiagram:
         """Place the set label on the side opposite to the centroid of all other sets."""
         set_label_artists = []
         for ii, label in enumerate(set_labels):
-            delta = origins[ii] - np.mean([origin for jj, origin in enumerate(origins) if ii != jj])
+            delta = origins[ii] - np.mean([origin for jj, origin in enumerate(origins) if ii != jj], axis=0)
             x, y = origins[ii] + (1 + offset) * radii[ii] * delta / np.linalg.norm(delta)
             ha, va = get_text_alignment(*delta)
             set_label_artists.append(ax.text(x, y, label, ha=ha, va=va))
