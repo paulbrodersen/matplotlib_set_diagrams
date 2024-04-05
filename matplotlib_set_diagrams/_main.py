@@ -92,8 +92,12 @@ class SetDiagram:
         self.subset_colors = self._get_subset_colors(subset_ids, set_colors)
         self.ax = self._initialize_axis(ax=ax)
         self.subset_artists = self._draw_subsets(self.subset_geometries, self.subset_colors, self.ax)
-        self.subset_label_artists = self._draw_subset_labels(subset_labels, self.subset_geometries, self.subset_colors, self.ax)
-        self.set_label_artists = self._draw_set_labels(set_labels, origins, radii, self.ax)
+
+        if subset_labels:
+            self.subset_label_artists = self._draw_subset_labels(subset_labels, self.subset_geometries, self.subset_colors, self.ax)
+
+        if set_labels:
+            self.set_label_artists = self._draw_set_labels(set_labels, origins, radii, self.ax)
 
 
     def _get_subset_geometries(self, subsets, origins, radii):
@@ -795,112 +799,3 @@ class VennWordCloud(EulerWordCloud, VennDiagram):
 
     """
     pass
-
-
-if __name__ == "__main__":
-
-    # # canonical 2-way Euler diagram
-    # subset_sizes = {
-    #     (1, 0) : 1,
-    #     (0, 1) : 1,
-    #     (1, 1) : 0.5,
-    # }
-    # diagram = EulerDiagramBase(subset_sizes)
-    # evaluate_layout(diagram.subset_sizes, diagram.subset_geometries, verbose=True)
-
-    # # a is superset of b
-    # subset_sizes = {
-    #     (1, 0) : 1,
-    #     (0, 1) : 0,
-    #     (1, 1) : 0.5,
-    # }
-    # EulerDiagramBase(subset_sizes)
-
-    # # canonical 3-way Euler diagramase
-    # subset_sizes = {
-    #     (1, 0, 0) : 1,
-    #     (0, 1, 0) : 1,
-    #     (0, 0, 1) : 1,
-    #     (1, 1, 0) : 0.5,
-    #     (1, 0, 1) : 0.5,
-    #     (0, 1, 1) : 0.5,
-    #     (1, 1, 1) : 0.25,
-    # }
-    # EulerDiagramBase(subset_sizes)
-
-    # # --------------------------------------------------------------------------------
-    # # Initialization with proper sets.
-    # sets = [
-    #     {"Lorem", "ipsum", "dolor"},
-    #     {"dolor", "sit", "amet"}
-    # ]
-    # EulerDiagram(sets)
-
-    # # No intersection.
-    # sets = [
-    #     {"Lorem", "ipsum", "dolor"},
-    #     {"sit", "amet"}
-    # ]
-    # EulerDiagram(sets)
-
-    # # Empty sets.
-    # sets = [
-    #     {"Lorem", "ipsum", "dolor", "sit", "amet"},
-    #     {}
-    # ]
-    # EulerDiagram(sets)
-
-    # # --------------------------------------------------------------------------------
-    # # EulerDiagram with word clouds on top
-    # test_string_1 = """Lorem ipsum dolor sit amet, consetetur
-    # sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore
-    # et dolore magna aliquyam erat, sed diam voluptua."""
-
-    # test_string_2 = """At vero eos et accusam et justo duo dolores et
-    # ea rebum. Stet clita kasd gubergren, no sea takimata sanctus
-    # est. Lorem ipsum dolor sit amet."""
-
-    # # tokenize words
-    # sets = []
-    # for test_string in [test_string_1, test_string_2]:
-    #     # get a word list
-    #     words = test_string.split(' ')
-    #     # remove non alphanumeric characters
-    #     words = [''.join(ch for ch in word if ch.isalnum()) for word in words]
-    #     # convert to all lower case
-    #     words = [word.lower() for word in words]
-    #     sets.append(set(words))
-
-    # EulerWordCloud(sets)
-
-    #--------------------------------------------------------------------------------
-    # Venn diagram
-
-    # canonical 2-way Venn diagram
-    VennDiagram([{0, 1}, {1, 2}])
-
-    # canonical 3-way Venn diagram
-    VennDiagram([{0, 1, 2, 3}, {0, 1, 4, 5}, {0, 2, 4, 6}])
-
-    # WordCloud
-    test_string_1 = """Lorem ipsum dolor sit amet, consetetur
-    sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore
-    et dolore magna aliquyam erat, sed diam voluptua."""
-
-    test_string_2 = """Lorem ipsum dolor sit amet. At vero eos et
-    accusam et justo duo dolores et ea rebum. """
-
-    # tokenize words
-    sets = []
-    for test_string in [test_string_1, test_string_2]:
-        # get a word list
-        words = test_string.split(' ')
-        # remove non alphanumeric characters
-        words = [''.join(ch for ch in word if ch.isalnum()) for word in words]
-        # convert to all lower case
-        words = [word.lower() for word in words]
-        sets.append(set(words))
-
-    VennWordCloud(sets)
-
-    plt.show()
