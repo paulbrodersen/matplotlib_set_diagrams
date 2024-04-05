@@ -109,7 +109,7 @@ class SetDiagram:
 
     def _get_subset_colors(self, subsets, set_colors=None):
         if not set_colors:
-            set_colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+            set_colors = plt.rcParamsDefault['axes.prop_cycle'].by_key()['color']
         subset_colors = dict()
         for subset in subsets:
             subset_colors[subset] = blend_colors([set_colors[ii] for ii, is_superset in enumerate(subset) if is_superset])
