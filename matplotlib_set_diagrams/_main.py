@@ -86,6 +86,9 @@ class SetDiagram:
 
     def __init__(self, origins, radii, subset_labels=None,
                  set_labels=None, set_colors=None, ax=None):
+    """Draw a diagram visualising the relationships between two or
+    more sets using two or more overlapping circles.
+    """
 
         subset_ids = [subset_id for subset_id in list(product(*len(origins) * [(False, True)])) if True in subset_id]
         self.subset_geometries = self._get_subset_geometries(subset_ids, origins, radii)
