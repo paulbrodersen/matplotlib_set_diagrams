@@ -8,13 +8,26 @@ from scipy.spatial.distance import pdist, squareform
 from scipy.optimize import minimize, NonlinearConstraint
 from shapely import intersection_all, union_all
 from shapely.geometry import Point
+from shapely.geometry.polygon import Polygon as ShapelyPolygon
 from shapely.ops import polylabel
 from matplotlib.colors import to_rgba, to_rgba_array
 from matplotlib.path import Path
 from wordcloud import WordCloud
 
+from typing import (
+    Any,
+    Tuple,
+    Union,
+    Optional,
+    Callable,
+    Mapping,
+)
+from numpy.typing import NDArray
+from matplotlib.typing import ColorType
+from matplotlib.image import AxesImage
 
-def blend_colors(colors, gamma=2.2):
+
+def blend_colors(colors : Any, gamma : float = 2.2) -> NDArray:
     # Adapted from: https://stackoverflow.com/a/29321264/2912349
     rgba = to_rgba_array(colors)
     rgb = np.power(np.mean(np.power(rgba[:, :3], gamma), axis=0), 1/gamma)
@@ -22,12 +35,12 @@ def blend_colors(colors, gamma=2.2):
     return np.array([*rgb, a])
 
 
-def rgba_to_grayscale(r, g, b, a=1):
+def rgba_to_grayscale(r : float, g : float, b : float, a : float = 1) -> float:
     # Adapted from: https://stackoverflow.com/a/689547/2912349
     return (0.299 * r + 0.587 * g + 0.114 * b) * a
 
 
-def get_text_alignment(dx, dy):
+def get_text_alignment(dx : float, dy : float) -> Tuple[str, str]:
     """For given arrow (dx, dy), determine the text alignment for a
     label placed at the arrow head such that the text does not overlap
     the arrow.
@@ -52,22 +65,27 @@ def get_text_alignment(dx, dy):
     return horizontalalignment, verticalalignment
 
 
-def evaluate_layout(subset_sizes, subset_geometries, verbose=True):
+def evaluate_layout(
+        desired_areas   : dict[Any, float],
+        displayed_areas : dict[Any, float],
+        verbose         : bool = True,
+) -> dict[str, Union[list[str], NDArray]]:
     """Evaluate the layout of diagram instance w.r.t. different cost function objectives."""
 
-    desired_areas = np.array(list(subset_sizes.values()))
-    subset_areas = np.array([geometry.area for geometry in subset_geometries.values()])
-    eps = 1e-2 * np.sum(desired_areas)
+    area_labels = list(desired_areas.keys())
+    desired = np.array([desired_areas[area] for area in area_labels])
+    displayed = np.array([displayed_areas[area] for area in area_labels])
+    eps = 1e-2 * np.sum(desired)
 
     performance = {
-        "subset" : list(subset_sizes.keys()),
-        "desired area" : desired_areas,
-        "displayed area" : subset_areas,
-        "simple" : np.abs(subset_areas - desired_areas),
-        "squared" : (subset_areas - desired_areas)**2,
-        "relative" : np.abs([1 - min(x/y, y/x) if x != y else 0. for x, y in zip(subset_areas, desired_areas)]),
-        "logarithmic" : np.abs(np.log(subset_areas + 1) - np.log(desired_areas + 1)),
-        "inverse" : np.abs(1 / (subset_areas + eps) - 1 / (desired_areas + eps)),
+        "subset" : area_labels,
+        "desired area" : desired,
+        "displayed area" : displayed,
+        "simple" : np.abs(displayed - desired),
+        "squared" : (displayed - desired)**2,
+        "relative" : np.abs([1 - min(x/y, y/x) if x != y else 0. for x, y in zip(displayed, desired)]),
+        "logarithmic" : np.abs(np.log(displayed + 1) - np.log(desired + 1)),
+        "inverse" : np.abs(1 / (displayed + eps) - 1 / (desired + eps)),
     }
 
     if verbose: # pretty print results
@@ -83,15 +101,52 @@ def evaluate_layout(subset_sizes, subset_geometries, verbose=True):
 
 
 class SetDiagram:
-
-    def __init__(self, origins, radii, subset_labels=None,
-                 set_labels=None, set_colors=None, ax=None):
     """Draw a diagram visualising the relationships between two or
     more sets using two or more overlapping circles.
+
+    origins : NDArray
+        The circle origins.
+    radii : NDArray
+        The circle radii.
+    subset_labels : Optional[dict[Tuple(bool), str]]
+        A dictioanry mapping subsets to their labels.
+        If None, no subset labels are created.
+    set_labels : Optional[list[str]]
+        A list of set labels.
+        If None, no subset labels are created.
+    set_colors : Optional[list[Any]]
+        A corresponding list of matplotlib colors.
+        If none, defaults to the default matplotlib color cycle.
+    ax : Optional[plt.Axes]
+        The matplotlib axis instance to draw onto.
+        If none provided, a new figure with a single axis is instantiated.
+
+    Attributes
+    ----------
+    subset_geometries : dict[Tuple[bool], shapely.geometry.polygon.Polygon]
+        The dictionary mapping each subset to its shapely geometry.
+    subset_artists : dict[tuple[bool], plt.Polygon]
+        The matplotlib Polygon patches representing each subset.
+    subset_label_artists : dict[tuple[bool], plt.Text]
+        The matplotlib text objects used to label each subset.
+    set_label_artists : list[plt.Text]
+        The matplotlib text objects used to label each set.
+    ax : plt.Axes
+        The matplotlib axis instance.
+
     """
+    def __init__(
+            self,
+            origins       : NDArray,
+            radii         : NDArray,
+            subset_labels : Optional[dict[Tuple[bool], str]] = None,
+            set_labels    : Optional[list[str]]              = None,
+            set_colors    : Optional[list]                   = None,
+            ax            : Optional[plt.Axes]               = None,
+    ) -> None:
 
         subset_ids = [subset_id for subset_id in list(product(*len(origins) * [(False, True)])) if True in subset_id]
-        self.subset_geometries = self._get_subset_geometries(subset_ids, origins, radii)
+        self.subset_geometries : ShapelyPolygon = self._get_subset_geometries(subset_ids, origins, radii)
         self.subset_colors = self._get_subset_colors(subset_ids, set_colors)
         self.ax = self._initialize_axis(ax=ax)
         self.subset_artists = self._draw_subsets(self.subset_geometries, self.subset_colors, self.ax)
@@ -103,7 +158,12 @@ class SetDiagram:
             self.set_label_artists = self._draw_set_labels(set_labels, origins, radii, self.ax)
 
 
-    def _get_subset_geometries(self, subsets, origins, radii):
+    def _get_subset_geometries(
+            self,
+            subsets : list[Tuple[bool]],
+            origins : NDArray,
+            radii   : NDArray
+    ) -> dict[Tuple[bool], ShapelyPolygon]:
         "Compute each subset polygon as a shapely geometry object."
         set_geometries = [Point(*origin).buffer(radius) for origin, radius in zip(origins, radii)]
         subset_geometries = dict()
@@ -114,8 +174,13 @@ class SetDiagram:
         return subset_geometries
 
 
-    def _get_subset_colors(self, subsets, set_colors=None):
-        if not set_colors:
+    def _get_subset_colors(
+            self,
+            subsets    : list[Tuple[bool]],
+            set_colors : Optional[list[Any]] = None,
+    ) -> dict[Tuple[bool], NDArray]:
+        """Determine the color of each subset patch based on the colors of the overlapping sets."""
+        if set_colors is None:
             set_colors = plt.rcParamsDefault['axes.prop_cycle'].by_key()['color']
         subset_colors = dict()
         for subset in subsets:
@@ -123,7 +188,7 @@ class SetDiagram:
         return subset_colors
 
 
-    def _initialize_axis(self, ax=None):
+    def _initialize_axis(self, ax : Optional[plt.Axes] = None) -> plt.Axes:
         """Initialize the axis if none provided. Ensure that the
         aspect is equal such that circles are circles and not
         ellipses.
@@ -136,7 +201,12 @@ class SetDiagram:
         return ax
 
 
-    def _draw_subsets(self, subset_geometries, subset_colors, ax):
+    def _draw_subsets(
+            self,
+            subset_geometries : dict[Tuple[bool], ShapelyPolygon],
+            subset_colors     : dict[Tuple[bool], NDArray],
+            ax                : plt.Axes,
+    ) -> dict[Tuple[bool], plt.Polygon]:
         """Draw each subset as a separate polygon patch."""
         subset_artists = dict()
         for subset, geometry in subset_geometries.items():
@@ -148,7 +218,13 @@ class SetDiagram:
         return subset_artists
 
 
-    def _draw_subset_labels(self, subset_labels, subset_geometries, subset_colors, ax):
+    def _draw_subset_labels(
+            self,
+            subset_labels     : dict[Tuple[bool], str],
+            subset_geometries : dict[Tuple[bool], ShapelyPolygon],
+            subset_colors     : dict[Tuple[bool], NDArray],
+            ax                : plt.Axes,
+    ) -> dict[Tuple[bool], plt.Text]:
         """Place subset labels centred on the point of inaccesibility
         (POI) of the corresponding polygon.
         """
@@ -165,7 +241,14 @@ class SetDiagram:
         return subset_label_artists
 
 
-    def _draw_set_labels(self, set_labels, origins, radii, ax, offset=0.1):
+    def _draw_set_labels(
+            self,
+            set_labels : list[str],
+            origins    : NDArray,
+            radii      : NDArray,
+            ax         : plt.Axes,
+            offset     : float = 0.1,
+    ) -> list[plt.Text]:
         """Place the set label on the side opposite to the centroid of all other sets."""
         set_label_artists = []
         for ii, label in enumerate(set_labels):
@@ -205,15 +288,9 @@ class EulerDiagramBase(SetDiagram):
       particularly useful when some theoretically possible subsets are
       absent. The epsilon parameter is arbitrarily set to 1% of the largest set size.
 
-    Determining the best cost function objective for a given case can require
-    some trial-and-error. If one or more subsets areas are not represented
-    adequately, print the performance report (with :code:`verbose=True`).
-    This will indicate for each subset the penalty on the remaining discrepancies,
-    and thus facilitate choosing a more appropriate objective for the next iteration.
-
     Parameters
     ----------
-    subset_sizes : dict[tuple[bool], float]
+    subset_sizes : Mapping[Tuple[bool], Union[int, float]]
         A dictionary mapping each subset to its desired size.
         Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
         each entry in the tuple indicates if the corresponding set is a superset of the subset.
@@ -222,7 +299,7 @@ class EulerDiagramBase(SetDiagram):
     subset_label_formatter : Optional[Callable]
         The formatter used to create subset labels based on the subset sizes.
         The function should accept an int or float and return a string.
-    set_labels : list[str]
+    set_labels : Optional[list[str]]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
     set_colors : Optional[list[Any]]
@@ -239,56 +316,60 @@ class EulerDiagramBase(SetDiagram):
 
     verbose : bool
         Print a report of the optimisation process.
-    ax : matplotlib axis instance
-        The axis to plot onto. If none, a new figure is instantiated.
+    ax : Optional[plt.Axes]
+        The matplotlib axis instance to draw onto.
+        If none provided, a new figure with a single axis is instantiated.
 
     Attributes
     ----------
-    subset_sizes : dict[tuple[bool], float]
-        The dictionary mapping each subset to its desired size.
-    set_sizes : list[int]
-        The set sizes.
-    radii : list[float]
-        The radii of the corresponding circles.
-    origins : list[float]
-        The origins of the corresponding circles.
-    performance : dict[str, list[float]]
-        A table summarising the performance of the optimisation.
-    subset_artists : dict[tuple[bool], matplotlib.patches.Polygon]
+    origins : NDArray
+        The circle origins.
+    radii : NDArray
+        The circle radii.
+    subset_geometries : dict[Tuple[bool], shapely.geometry.polygon.Polygon]
+        The dictionary mapping each subset to its shapely geometry.
+    subset_artists : dict[tuple[bool], plt.Polygon]
         The matplotlib Polygon patches representing each subset.
-    subset_label_artists : dict[tuple[bool], matplotlib.text.Text]
+    subset_label_artists : dict[tuple[bool], plt.Text]
         The matplotlib text objects used to label each subset.
-    set_label_artists : list[matplotlib.text.Text]
+    set_label_artists : list[plt.Text]
         The matplotlib text objects used to label each set.
+    ax : plt.Axes
+        The matplotlib axis instance.
 
     """
 
     def __init__(
-            self, subset_sizes,
-            subset_label_formatter=lambda subset, size : str(size),
-            set_labels=None,
-            set_colors=None,
-            cost_function_objective="inverse",
-            verbose=False,
-            ax=None,
-    ):
-        self.subset_sizes = subset_sizes
+            self,
+            subset_sizes            : Mapping[Tuple[bool], Union[int, float]],
+            subset_label_formatter  : Callable            = lambda subset, size : str(size),
+            set_labels              : Optional[list[str]] = None,
+            set_colors              : Optional[list[Any]] = None,
+            cost_function_objective : str                 = "inverse",
+            verbose                 : bool                = False,
+            ax                      : Optional[plt.Axes]  = None,
+    ) -> None:
 
-        origins, radii = self._get_layout(
-            self.subset_sizes, cost_function_objective, verbose)
+        self.origins, self.radii = self._get_layout(
+            subset_sizes, cost_function_objective, verbose)
 
         subset_labels = self._get_subset_labels(
-            self.subset_sizes, subset_label_formatter)
+            subset_sizes, subset_label_formatter)
 
         if set_labels is None:
-            set_labels = self._get_set_labels(len(origins))
+            set_labels = self._get_set_labels(len(self.origins))
 
         super().__init__(
-            origins, radii, subset_labels,
+            self.origins, self.radii, subset_labels,
             set_labels, set_colors, ax)
 
 
-    def _get_layout(self, subset_sizes, cost_function_objective, verbose):
+    def _get_layout(
+            self,
+            subset_sizes : Mapping[Tuple[bool], Union[int, float]],
+            cost_function_objective : str,
+            verbose : bool
+    ) -> Tuple[NDArray, NDArray]:
         origins, radii = self._initialize_layout(subset_sizes)
         origins, radii = self._optimize_layout(subset_sizes, origins, radii,
                                                cost_function_objective,
@@ -296,24 +377,24 @@ class EulerDiagramBase(SetDiagram):
         return origins, radii
 
 
-    def _initialize_layout(self, subset_sizes):
+    def _initialize_layout(self, subset_sizes : Mapping[Tuple[bool], Union[int, float]]) -> Tuple[NDArray, NDArray]:
         set_sizes = self._get_set_sizes(subset_sizes)
         radii = self._initialize_radii(set_sizes)
         origins = self._initialize_origins(radii)
         return origins, radii
 
 
-    def _get_set_sizes(self, subset_sizes):
+    def _get_set_sizes(self, subset_sizes : Mapping[Tuple[bool], Union[int, float]]) -> NDArray:
         """Compute the size of each set based on the sizes of its constituent sub-sets"""
         return np.sum([size * np.array(subset) for subset, size in subset_sizes.items()], axis=0)
 
 
-    def _initialize_radii(self, areas):
+    def _initialize_radii(self, areas : NDArray) -> NDArray:
         """Map set sizes onto circle radii."""
         return np.array([np.sqrt(area / np.pi) for area in areas])
 
 
-    def _initialize_origins(self, radii):
+    def _initialize_origins(self, radii : NDArray) -> NDArray:
         """The optimisation procedure uses gradient descent to find
         the circle arrangement that best matches the desired subset
         areas. If a subset area is zero, there is no gradient to
@@ -336,7 +417,14 @@ class EulerDiagramBase(SetDiagram):
         return np.c_[x, y]
 
 
-    def _optimize_layout(self, subset_sizes, origins, radii, objective, verbose):
+    def _optimize_layout(
+            self,
+            subset_sizes : Mapping[Tuple[bool], Union[int, float]],
+            origins      : NDArray,
+            radii        : NDArray,
+            objective    : str,
+            verbose      : bool
+    ) -> Tuple[NDArray, NDArray]:
         """Optimize the placement of circle origins according to the
         given cost function objective.
 
@@ -401,11 +489,15 @@ class EulerDiagramBase(SetDiagram):
         return origins, radii
 
 
-    def _get_set_labels(self, total_sets):
-        return ascii_uppercase[:total_sets]
+    def _get_set_labels(self, total_sets : int) -> list[str]:
+        return [char for char in ascii_uppercase[:total_sets]]
 
 
-    def _get_subset_labels(self, subset_sizes, formatter):
+    def _get_subset_labels(
+            self,
+            subset_sizes : Mapping[Tuple[bool], Union[int, float]],
+            formatter    : Callable,
+    ) -> dict[Tuple[bool], str]:
         """Map subset sizes to strings using the provided formatter."""
         subset_labels = dict()
         for subset, size in subset_sizes.items():
@@ -442,20 +534,14 @@ class EulerDiagram(EulerDiagramBase):
       particularly useful when some theoretically possible subsets are
       absent. The epsilon parameter is arbitrarily set to 1% of the largest set size.
 
-    Determining the best cost function objective for a given case can require
-    some trial-and-error. If one or more subsets areas are not represented
-    adequately, print the performance report (with :code:`verbose=True`).
-    This will indicate for each subset the penalty on the remaining discrepancies,
-    and thus facilitate choosing a more appropriate objective for the next iteration.
-
     Parameters
     ----------
     sets : list[set]
         The sets.
-    subset_label_formatter : Optional[Callable]
+    subset_label_formatter : Callable
         The formatter used to create subset labels based on the subset sizes.
         The function should accept an int or float and return a string.
-    set_labels : list[str]
+    set_labels : Optional[list[str]]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
     set_colors : Optional[list[Any]]
@@ -472,40 +558,61 @@ class EulerDiagram(EulerDiagramBase):
 
     verbose : bool
         Print a report of the optimisation process.
-    ax : matplotlib axis instance
-        The axis to plot onto. If none, a new figure is instantiated.
+    ax : Optional[plt.Axes]
+        The matplotlib axis instance to draw onto.
+        If none provided, a new figure with a single axis is instantiated.
 
     Attributes
     ----------
-    subset_sizes : dict[tuple[bool, ...], float]
+    subset_sizes : Mapping[Tuple[bool], Union[int, float]]
         The dictionary mapping each subset to its desired size.
         Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
         each entry in the tuple indicates if the corresponding set is a superset of the subset.
         For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
         whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
-    set_sizes : list[int]
-        The set sizes.
-    radii : list[float]
-        The radii of the corresponding circles.
-    origins : list[float]
-        The origins of the corresponding circles.
-    performance : dict[str, list[float]]
-        A table summarising the performance of the optimisation.
-    subset_artists : dict[tuple[bool], matplotlib.patches.Polygon]
+    origins : NDArray
+        The circle origins.
+    radii : NDArray
+        The circle radii.
+    subset_geometries : dict[Tuple[bool], shapely.geometry.polygon.Polygon]
+        The dictionary mapping each subset to its shapely geometry.
+    subset_artists : dict[tuple[bool], plt.Polygon]
         The matplotlib Polygon patches representing each subset.
-    subset_label_artists : dict[tuple[bool], matplotlib.text.Text]
+    subset_label_artists : dict[tuple[bool], plt.Text]
         The matplotlib text objects used to label each subset.
-    set_label_artists : list[matplotlib.text.Text]
+    set_label_artists : list[plt.Text]
         The matplotlib text objects used to label each set.
+    ax : plt.Axes
+        The matplotlib axis instance.
 
     """
-    def __init__(self, sets, *args, **kwargs):
+
+    def __init__(
+            self,
+            sets                    : list[set],
+            subset_label_formatter  : Callable            = lambda subset, size : str(size),
+            set_labels              : Optional[list[str]] = None,
+            set_colors              : Optional[list[Any]] = None,
+            cost_function_objective : str                 = "inverse",
+            verbose                 : bool                = False,
+            ax                      : Optional[plt.Axes]  = None,
+    ) -> None:
+
         sets = [set(item) for item in sets]
-        subset_sizes = self._get_subset_sizes(sets)
-        super().__init__(subset_sizes, *args, **kwargs)
+        self.subset_sizes = self._get_subset_sizes(sets)
+
+        super().__init__(
+            self.subset_sizes,
+            subset_label_formatter  = subset_label_formatter,
+            set_labels              = set_labels,
+            set_colors              = set_colors,
+            cost_function_objective = cost_function_objective,
+            verbose                 = verbose,
+            ax                      = ax,
+        )
 
 
-    def _get_subset_sizes(self, sets):
+    def _get_subset_sizes(self, sets : list[set]) -> dict[Tuple[bool], int]:
         """Creates a dictionary mapping subsets to subset size. The
         subset IDs are tuples of booleans, with each boolean
         indicating if the corresponding input set is a superset of the
@@ -551,24 +658,18 @@ class EulerWordCloud(EulerDiagram):
       particularly useful when some theoretically possible subsets are
       absent. The epsilon parameter is arbitrarily set to 1% of the largest set size.
 
-    Determining the best cost function objective for a given case can require
-    some trial-and-error. If one or more subsets areas are not represented
-    adequately, print the performance report (with :code:`verbose=True`).
-    This will indicate for each subset the penalty on the remaining discrepancies,
-    and thus facilitate choosing a more appropriate objective for the next iteration.
-
     Parameters
     ----------
     sets : list[set[Any]]
         The sets.
     minimum_resolution : int
-        The minimum extent of the wordcloud image in pixels.
+        The minimum extent, i.e. :code:`min(width, height)`, of the wordcloud image in pixels.
     wordcloud_kwargs : dict[str, Any]
         Key word arguments passed through to WordCloud.
-    subset_label_formatter : Optional[Callable]
+    subset_label_formatter : Callable
         The formatter used to create subset labels based on the subset sizes.
         The function should accept an int or float and return a string.
-    set_labels : list[str]
+    set_labels : Optional[list[str]]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
     set_colors : Optional[list[Any]]
@@ -585,41 +686,60 @@ class EulerWordCloud(EulerDiagram):
 
     verbose : bool
         Print a report of the optimisation process.
-    ax : matplotlib axis instance
-        The axis to plot onto. If none, a new figure is instantiated.
+    ax : Optional[plt.Axes]
+        The matplotlib axis instance to draw onto.
+        If none provided, a new figure with a single axis is instantiated.
+
 
     Attributes
     ----------
-    sets : list[set[Any]]
-        The sets.
-    subsets : dict[tuple[bool], set]
+    subsets : dict[Tuple[bool], set]
         The dictionary mapping each subset ID to the items in the subset.
         Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
         each entry in the tuple indicates if the corresponding set is a superset of the subset.
         For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
         whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
-    subset_sizes : dict[tuple[bool], float]
+    subset_sizes : dict[Tuple[bool], float]
         The dictionary mapping each subset to its desired size.
-    set_sizes : list[int]
-        The set sizes.
-    radii : list[float]
-        The radii of the corresponding circles.
-    origins : list[float]
-        The origins of the corresponding circles.
-    performance : dict[str, list[float]]
-        A table summarising the performance of the optimisation.
-    subset_artists : dict[tuple[bool], matplotlib.patches.Polygon]
+    origins : NDArray
+        The circle origins.
+    radii : NDArray
+        The circle radii.
+    subset_geometries : dict[Tuple[bool], shapely.geometry.polygon.Polygon]
+        The dictionary mapping each subset to its shapely geometry.
+    subset_artists : dict[tuple[bool], plt.Polygon]
         The matplotlib Polygon patches representing each subset.
-    subset_label_artists : dict[tuple[bool], matplotlib.text.Text]
+    subset_label_artists : dict[tuple[bool], plt.Text]
         The matplotlib text objects used to label each subset.
-        The alpha of the text objects is set to zero so that wordclouds remain fully visible.
-    set_label_artists : list[matplotlib.text.Text]
+    set_label_artists : list[plt.Text]
         The matplotlib text objects used to label each set.
+    ax : plt.Axes
+        The matplotlib axis instance.
 
     """
 
-    def __init__(self, sets, minimum_resolution=300, wordcloud_kwargs=dict(), *args, **kwargs):
-        super().__init__(sets, *args, **kwargs)
+    def __init__(
+            self,
+            sets                    : list[set],
+            minimum_resolution      : int                 = 300,
+            wordcloud_kwargs        : dict[str, Any]      = dict(),
+            subset_label_formatter  : Callable            = lambda subset, size : str(size),
+            set_labels              : Optional[list[str]] = None,
+            set_colors              : Optional[list[Any]] = None,
+            cost_function_objective : str                 = "inverse",
+            verbose                 : bool                = False,
+            ax                      : Optional[plt.Axes]  = None,
+    ) -> None:
+
+        super().__init__(
+            sets,
+            subset_label_formatter  = subset_label_formatter,
+            set_labels              = set_labels,
+            set_colors              = set_colors,
+            cost_function_objective = cost_function_objective,
+            verbose                 = verbose,
+            ax                      = ax,
+        )
         self.subsets = self._get_subsets(sets)
         self.wordcloud = self._get_wordcloud(minimum_resolution, wordcloud_kwargs)
 
@@ -639,7 +759,7 @@ class EulerWordCloud(EulerDiagram):
         return subset_label_artists
 
 
-    def _get_subsets(self, sets):
+    def _get_subsets(self, sets : list[set]) -> dict[Tuple[bool], Any]:
         """Creates a dictionary mapping subsets to set items. The
         subset IDs are tuples of booleans, with each boolean
         indicating if the corresponding input set is a superset of the
@@ -654,7 +774,11 @@ class EulerWordCloud(EulerDiagram):
         return subsets
 
 
-    def _get_wordcloud(self, minimum_resolution, wordcloud_kwargs):
+    def _get_wordcloud(
+            self,
+            minimum_resolution : int,
+            wordcloud_kwargs : dict[str, Any],
+    ) -> AxesImage:
 
         xmin, xmax = self.ax.get_xlim()
         ymin, ymax = self.ax.get_ylim()
@@ -701,38 +825,41 @@ class VennDiagram(EulerDiagram):
     ----------
     sets : list[set]
         The sets.
-    subset_label_formatter : Optional[Callable]
+    subset_label_formatter : Callable
         The formatter used to create subset labels based on the subset sizes.
         The function should accept an int or float and return a string.
-    set_labels : list[str]
+    set_labels : Optional[list[str]]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
     set_colors : Optional[list[Any]]
         A corresponding list of matplotlib colors.
         If none, defaults to the default matplotlib color cycle.
-    ax : matplotlib axis instance
-        The axis to plot onto. If none, a new figure is instantiated.
+    ax : Optional[plt.Axes]
+        The matplotlib axis instance to draw onto.
+        If none provided, a new figure with a single axis is instantiated.
 
     Attributes
     ----------
-    subset_sizes : dict[tuple[bool, ...], float]
+    subset_sizes : Mapping[Tuple[bool], Union[int, float]]
         The dictionary mapping each subset to its desired size.
         Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
         each entry in the tuple indicates if the corresponding set is a superset of the subset.
         For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
         whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
-    set_sizes : list[int]
-        The set sizes.
-    radii : list[float]
-        The radii of the corresponding circles.
-    origins : list[float]
-        The origins of the corresponding circles.
-    subset_artists : dict[tuple[bool], matplotlib.patches.Polygon]
+    origins : NDArray
+        The circle origins.
+    radii : NDArray
+        The circle radii.
+    subset_geometries : dict[Tuple[bool], shapely.geometry.polygon.Polygon]
+        The dictionary mapping each subset to its shapely geometry.
+    subset_artists : dict[tuple[bool], plt.Polygon]
         The matplotlib Polygon patches representing each subset.
-    subset_label_artists : dict[tuple[bool], matplotlib.text.Text]
+    subset_label_artists : dict[tuple[bool], plt.Text]
         The matplotlib text objects used to label each subset.
-    set_label_artists : list[matplotlib.text.Text]
+    set_label_artists : list[plt.Text]
         The matplotlib text objects used to label each set.
+    ax : plt.Axes
+        The matplotlib axis instance.
 
     """
 
