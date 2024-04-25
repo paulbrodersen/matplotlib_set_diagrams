@@ -10,7 +10,7 @@ from shapely import intersection_all, union_all
 from shapely.geometry import Point
 from shapely.geometry.polygon import Polygon as ShapelyPolygon
 from shapely.ops import polylabel
-from matplotlib.colors import to_rgba, to_rgba_array
+from matplotlib.colors import to_rgba
 from matplotlib.path import Path
 from wordcloud import WordCloud
 
@@ -27,9 +27,9 @@ from matplotlib.typing import ColorType
 from matplotlib.image import AxesImage
 
 
-def blend_colors(colors : Any, gamma : float = 2.2) -> NDArray:
+def blend_colors(colors : list[ColorType], gamma : float = 2.2) -> NDArray:
     # Adapted from: https://stackoverflow.com/a/29321264/2912349
-    rgba = to_rgba_array(colors)
+    rgba = np.array([to_rgba(color) for color in colors])
     rgb = np.power(np.mean(np.power(rgba[:, :3], gamma), axis=0), 1/gamma)
     a = np.mean(rgba[:, -1])
     return np.array([*rgb, a])
@@ -114,7 +114,7 @@ class SetDiagram:
     set_labels : Optional[list[str]]
         A list of set labels.
         If None, no subset labels are created.
-    set_colors : Optional[list[Any]]
+    set_colors : Optional[list[ColorType]]
         A corresponding list of matplotlib colors.
         If none, defaults to the default matplotlib color cycle.
     ax : Optional[plt.Axes]
@@ -177,7 +177,7 @@ class SetDiagram:
     def _get_subset_colors(
             self,
             subsets    : list[Tuple[bool]],
-            set_colors : Optional[list[Any]] = None,
+            set_colors : Optional[list[ColorType]] = None,
     ) -> dict[Tuple[bool], NDArray]:
         """Determine the color of each subset patch based on the colors of the overlapping sets."""
         if set_colors is None:
@@ -302,7 +302,7 @@ class EulerDiagramBase(SetDiagram):
     set_labels : Optional[list[str]]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
-    set_colors : Optional[list[Any]]
+    set_colors : Optional[list[ColorType]]
         A corresponding list of matplotlib colors.
         If none, defaults to the default matplotlib color cycle.
     cost_function_objective : str
@@ -341,13 +341,13 @@ class EulerDiagramBase(SetDiagram):
 
     def __init__(
             self,
-            subset_sizes            : Mapping[Tuple[bool], Union[int, float]],
-            subset_label_formatter  : Callable            = lambda subset, size : str(size),
-            set_labels              : Optional[list[str]] = None,
-            set_colors              : Optional[list[Any]] = None,
-            cost_function_objective : str                 = "inverse",
-            verbose                 : bool                = False,
-            ax                      : Optional[plt.Axes]  = None,
+            subset_sizes            : Mapping[Tuple[bool], int | float],
+            subset_label_formatter  : Callable                  = lambda subset, size : str(size),
+            set_labels              : Optional[list[str]]       = None,
+            set_colors              : Optional[list[ColorType]] = None,
+            cost_function_objective : str                       = "inverse",
+            verbose                 : bool                      = False,
+            ax                      : Optional[plt.Axes]        = None,
     ) -> None:
 
         self.origins, self.radii = self._get_layout(
@@ -544,7 +544,7 @@ class EulerDiagram(EulerDiagramBase):
     set_labels : Optional[list[str]]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
-    set_colors : Optional[list[Any]]
+    set_colors : Optional[list[ColorType]]
         A corresponding list of matplotlib colors.
         If none, defaults to the default matplotlib color cycle.
     cost_function_objective : str
@@ -590,12 +590,12 @@ class EulerDiagram(EulerDiagramBase):
     def __init__(
             self,
             sets                    : list[set],
-            subset_label_formatter  : Callable            = lambda subset, size : str(size),
-            set_labels              : Optional[list[str]] = None,
-            set_colors              : Optional[list[Any]] = None,
-            cost_function_objective : str                 = "inverse",
-            verbose                 : bool                = False,
-            ax                      : Optional[plt.Axes]  = None,
+            subset_label_formatter  : Callable                  = lambda subset, size : str(size),
+            set_labels              : Optional[list[str]]       = None,
+            set_colors              : Optional[list[ColorType]] = None,
+            cost_function_objective : str                       = "inverse",
+            verbose                 : bool                      = False,
+            ax                      : Optional[plt.Axes]        = None,
     ) -> None:
 
         sets = [set(item) for item in sets]
@@ -672,7 +672,7 @@ class EulerWordCloud(EulerDiagram):
     set_labels : Optional[list[str]]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
-    set_colors : Optional[list[Any]]
+    set_colors : Optional[list[ColorType]]
         A corresponding list of matplotlib colors.
         If none, defaults to the default matplotlib color cycle.
     cost_function_objective : str
@@ -721,14 +721,14 @@ class EulerWordCloud(EulerDiagram):
     def __init__(
             self,
             sets                    : list[set],
-            minimum_resolution      : int                 = 300,
-            wordcloud_kwargs        : dict[str, Any]      = dict(),
-            subset_label_formatter  : Callable            = lambda subset, size : str(size),
-            set_labels              : Optional[list[str]] = None,
-            set_colors              : Optional[list[Any]] = None,
-            cost_function_objective : str                 = "inverse",
-            verbose                 : bool                = False,
-            ax                      : Optional[plt.Axes]  = None,
+            minimum_resolution      : int                       = 300,
+            wordcloud_kwargs        : dict[str, Any]            = dict(),
+            subset_label_formatter  : Callable                  = lambda subset, size : str(size),
+            set_labels              : Optional[list[str]]       = None,
+            set_colors              : Optional[list[ColorType]] = None,
+            cost_function_objective : str                       = "inverse",
+            verbose                 : bool                      = False,
+            ax                      : Optional[plt.Axes]        = None,
     ) -> None:
 
         super().__init__(
@@ -832,7 +832,7 @@ class VennDiagram(EulerDiagram):
     set_labels : Optional[list[str]]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
-    set_colors : Optional[list[Any]]
+    set_colors : Optional[list[ColorType]]
         A corresponding list of matplotlib colors.
         If none, defaults to the default matplotlib color cycle.
     ax : Optional[plt.Axes]
@@ -915,7 +915,7 @@ class VennWordCloud(EulerWordCloud, VennDiagram):
     set_labels : list[str]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
-    set_colors : Optional[list[Any]]
+    set_colors : Optional[list[ColorType]]
         A corresponding list of matplotlib colors.
         If none, defaults to the default matplotlib color cycle.
     ax : matplotlib axis instance
