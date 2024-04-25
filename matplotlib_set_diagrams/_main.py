@@ -17,7 +17,6 @@ from wordcloud import WordCloud
 from typing import (
     Any,
     Tuple,
-    Union,
     Optional,
     Callable,
     Mapping,
@@ -69,7 +68,7 @@ def evaluate_layout(
         desired_areas   : dict[Any, float],
         displayed_areas : dict[Any, float],
         verbose         : bool = True,
-) -> dict[str, Union[list[str], NDArray]]:
+) -> dict[str, list[str] | NDArray]:
     """Evaluate the layout of diagram instance w.r.t. different cost function objectives."""
 
     area_labels = list(desired_areas.keys())
@@ -290,7 +289,7 @@ class EulerDiagramBase(SetDiagram):
 
     Parameters
     ----------
-    subset_sizes : Mapping[Tuple[bool], Union[int, float]]
+    subset_sizes : Mapping[Tuple[bool], int | float]
         A dictionary mapping each subset to its desired size.
         Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
         each entry in the tuple indicates if the corresponding set is a superset of the subset.
@@ -366,7 +365,7 @@ class EulerDiagramBase(SetDiagram):
 
     def _get_layout(
             self,
-            subset_sizes : Mapping[Tuple[bool], Union[int, float]],
+            subset_sizes : Mapping[Tuple[bool], int | float],
             cost_function_objective : str,
             verbose : bool
     ) -> Tuple[NDArray, NDArray]:
@@ -377,14 +376,14 @@ class EulerDiagramBase(SetDiagram):
         return origins, radii
 
 
-    def _initialize_layout(self, subset_sizes : Mapping[Tuple[bool], Union[int, float]]) -> Tuple[NDArray, NDArray]:
+    def _initialize_layout(self, subset_sizes : Mapping[Tuple[bool], int | float]) -> Tuple[NDArray, NDArray]:
         set_sizes = self._get_set_sizes(subset_sizes)
         radii = self._initialize_radii(set_sizes)
         origins = self._initialize_origins(radii)
         return origins, radii
 
 
-    def _get_set_sizes(self, subset_sizes : Mapping[Tuple[bool], Union[int, float]]) -> NDArray:
+    def _get_set_sizes(self, subset_sizes : Mapping[Tuple[bool], int | float]) -> NDArray:
         """Compute the size of each set based on the sizes of its constituent sub-sets"""
         return np.sum([size * np.array(subset) for subset, size in subset_sizes.items()], axis=0)
 
@@ -419,7 +418,7 @@ class EulerDiagramBase(SetDiagram):
 
     def _optimize_layout(
             self,
-            subset_sizes : Mapping[Tuple[bool], Union[int, float]],
+            subset_sizes : Mapping[Tuple[bool], int | float],
             origins      : NDArray,
             radii        : NDArray,
             objective    : str,
@@ -495,7 +494,7 @@ class EulerDiagramBase(SetDiagram):
 
     def _get_subset_labels(
             self,
-            subset_sizes : Mapping[Tuple[bool], Union[int, float]],
+            subset_sizes : Mapping[Tuple[bool], int | float],
             formatter    : Callable,
     ) -> dict[Tuple[bool], str]:
         """Map subset sizes to strings using the provided formatter."""
@@ -564,7 +563,7 @@ class EulerDiagram(EulerDiagramBase):
 
     Attributes
     ----------
-    subset_sizes : Mapping[Tuple[bool], Union[int, float]]
+    subset_sizes : Mapping[Tuple[bool], int | float]
         The dictionary mapping each subset to its desired size.
         Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
         each entry in the tuple indicates if the corresponding set is a superset of the subset.
@@ -841,7 +840,7 @@ class VennDiagram(EulerDiagram):
 
     Attributes
     ----------
-    subset_sizes : Mapping[Tuple[bool], Union[int, float]]
+    subset_sizes : Mapping[Tuple[bool], int | float]
         The dictionary mapping each subset to its desired size.
         Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
         each entry in the tuple indicates if the corresponding set is a superset of the subset.
@@ -883,7 +882,7 @@ class VennDiagram(EulerDiagram):
 
     def _get_layout(
             self,
-            subset_sizes : Mapping[Tuple[bool], Union[int, float]],
+            subset_sizes : Mapping[Tuple[bool], int | float],
             cost_function_objective : str,
             verbose : bool
     ) -> Tuple[NDArray, NDArray]:
