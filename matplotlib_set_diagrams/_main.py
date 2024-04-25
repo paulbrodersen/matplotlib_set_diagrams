@@ -8,12 +8,12 @@ from scipy.spatial.distance import pdist, squareform
 from scipy.optimize import minimize, NonlinearConstraint
 from shapely import intersection_all, union_all
 from shapely.geometry import Point
-from shapely.geometry.polygon import Polygon as ShapelyPolygon
 from shapely.ops import polylabel
 from matplotlib.colors import to_rgba
 from matplotlib.path import Path
 from wordcloud import WordCloud
 
+# type hinting
 from typing import (
     Any,
     Tuple,
@@ -24,6 +24,7 @@ from typing import (
 from numpy.typing import NDArray
 from matplotlib.typing import ColorType
 from matplotlib.image import AxesImage
+from shapely.geometry.polygon import Polygon as ShapelyPolygon
 
 
 def blend_colors(colors : list[ColorType], gamma : float = 2.2) -> NDArray:
