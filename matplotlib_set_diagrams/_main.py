@@ -864,12 +864,31 @@ class VennDiagram(EulerDiagram):
 
     """
 
-    def _get_layout(self, subset_sizes, *args, **kwargs):
-        # # Option 1: all subsets are equal size
-        # subset_sizes = {subset : 1 for subset in subset_sizes}
-        # Option 2: intersections half in size with each superset
-        subset_sizes = {subset : 1 / 2**(np.sum(subset) - 1) for subset in subset_sizes}
-        return super()._get_layout(subset_sizes, cost_function_objective="simple", verbose=False)
+    def _get_subset_sizes(self, sets : list[set]) -> dict[Tuple[bool], int]:
+        """Creates a dictionary mapping subsets to subset size. The
+        subset IDs are tuples of booleans, with each boolean
+        indicating if the corresponding input set is a superset of the
+        subset or not.
+
+        """
+        subset_size = dict()
+        for subset_id in list(product(*len(sets) * [(False, True)])):
+            if np.any(subset_id):
+                # # Option 1: all subsets are equal size
+                # subset_size[subset_id] = 1
+                # Option 2: intersections half in size with each superset
+                subset_size[subset_id] = 1 / 2**(np.sum(subset_id) - 1)
+        return subset_size
+
+
+    def _get_layout(
+            self,
+            subset_sizes : Mapping[Tuple[bool], Union[int, float]],
+            cost_function_objective : str,
+            verbose : bool
+    ) -> Tuple[NDArray, NDArray]:
+        return super()._get_layout(
+            subset_sizes, cost_function_objective="simple", verbose=False)
 
 
 class VennWordCloud(EulerWordCloud, VennDiagram):
