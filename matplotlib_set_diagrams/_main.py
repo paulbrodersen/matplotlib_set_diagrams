@@ -745,10 +745,11 @@ class EulerWordCloud(EulerDiagram):
 
 
     def _draw_subsets(self, *args, **kwargs):
-        """Draw subsets with transparent faces."""
+        """Draw subsets as before but then make the faces transparent."""
         subset_artists = super()._draw_subsets(*args, **kwargs)
         for subset, artist in subset_artists.items():
-            artist.set_facecolor(np.zeros((4)))
+            r, g, b, a = artist.get_facecolor()
+            artist.set_facecolor((r, g, b, 0.))
         return subset_artists
 
 
