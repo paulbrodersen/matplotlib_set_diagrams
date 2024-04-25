@@ -905,46 +905,46 @@ class VennWordCloud(EulerWordCloud, VennDiagram):
     sets : list[set[Any]]
         The sets.
     minimum_resolution : int
-        The minimum extent of the wordcloud image in pixels.
+        The minimum extent, i.e. :code:`min(width, height)`, of the wordcloud image in pixels.
     wordcloud_kwargs : dict[str, Any]
         Key word arguments passed through to WordCloud.
-    subset_label_formatter : Optional[Callable]
+    subset_label_formatter : Callable
         The formatter used to create subset labels based on the subset sizes.
         The function should accept an int or float and return a string.
-    set_labels : list[str]
+    set_labels : Optional[list[str]]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
     set_colors : Optional[list[ColorType]]
         A corresponding list of matplotlib colors.
         If none, defaults to the default matplotlib color cycle.
-    ax : matplotlib axis instance
-        The axis to plot onto. If none, a new figure is instantiated.
+    ax : Optional[plt.Axes]
+        The matplotlib axis instance to draw onto.
+        If none provided, a new figure with a single axis is instantiated.
 
     Attributes
     ----------
-    sets : list[set[Any]]
-        The sets.
-    subsets : dict[tuple[bool], set]
+    subsets : dict[Tuple[bool], set]
         The dictionary mapping each subset ID to the items in the subset.
         Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
         each entry in the tuple indicates if the corresponding set is a superset of the subset.
         For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
         whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
-    subset_sizes : dict[tuple[bool], float]
+    subset_sizes : dict[Tuple[bool], float]
         The dictionary mapping each subset to its desired size.
-    set_sizes : list[int]
-        The set sizes.
-    radii : list[float]
-        The radii of the corresponding circles.
-    origins : list[float]
-        The origins of the corresponding circles.
-    subset_artists : dict[tuple[bool], matplotlib.patches.Polygon]
+    origins : NDArray
+        The circle origins.
+    radii : NDArray
+        The circle radii.
+    subset_geometries : dict[Tuple[bool], shapely.geometry.polygon.Polygon]
+        The dictionary mapping each subset to its shapely geometry.
+    subset_artists : dict[tuple[bool], plt.Polygon]
         The matplotlib Polygon patches representing each subset.
-    subset_label_artists : dict[tuple[bool], matplotlib.text.Text]
+    subset_label_artists : dict[tuple[bool], plt.Text]
         The matplotlib text objects used to label each subset.
-        The alpha of the text objects is set to zero so that wordclouds remain fully visible.
-    set_label_artists : list[matplotlib.text.Text]
+    set_label_artists : list[plt.Text]
         The matplotlib text objects used to label each set.
+    ax : plt.Axes
+        The matplotlib axis instance.
 
     """
     pass
