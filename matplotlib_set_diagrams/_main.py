@@ -364,6 +364,11 @@ class EulerDiagramBase(SetDiagram):
             self.origins, self.radii, subset_labels,
             set_labels, set_colors, ax)
 
+        for subset, size in subset_sizes.items():
+            if size == 0:
+                self.subset_artists[subset].set_visible(False)
+                self.subset_label_artists[subset].set_visible(False)
+
 
     def _get_layout(
             self,
