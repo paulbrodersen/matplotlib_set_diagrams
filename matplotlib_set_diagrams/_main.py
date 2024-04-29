@@ -78,19 +78,20 @@ def evaluate_layout(
     eps = 1e-2 * np.sum(desired)
 
     performance = {
-        "subset" : area_labels,
-        "desired area" : desired,
+        "subset"         : area_labels,
+        "desired area"   : desired,
         "displayed area" : displayed,
-        "simple" : np.abs(displayed - desired),
-        "squared" : (displayed - desired)**2,
-        "relative" : np.abs([1 - min(x/y, y/x) if x != y else 0. for x, y in zip(displayed, desired)]),
-        "logarithmic" : np.abs(np.log(displayed + 1) - np.log(desired + 1)),
-        "inverse" : np.abs(1 / (displayed + eps) - 1 / (desired + eps)),
+        "simple"         : np.abs(displayed - desired),
+        "squared"        : (displayed - desired)**2,
+        "relative"       : np.abs([1 - min(x/y, y/x) if x != y else 0. for x, y in zip(displayed, desired)]),
+        "logarithmic"    : np.abs(np.log(displayed + 1) - np.log(desired + 1)),
+        "inverse"        : np.abs(1 / (displayed + eps) - 1 / (desired + eps)),
     }
 
     if verbose: # pretty print results
         paddings = [len(key) for key in performance]
-        paddings[0] = np.max([len(str(key)) for key in performance["subset"]]) # subset IDs are equally long or longer than the string "subset" (=="(0, 0)")
+        # subset IDs are equally long or longer than the string "subset" (=="(0, 0)"):
+        paddings[0] = np.max([len(str(key)) for key in performance["subset"]])
         print()
         print(" | ".join([f"{item:>{pad}}" for item, pad in zip(performance.keys(), paddings)]))
         for row in zip(*performance.values()):
