@@ -260,7 +260,7 @@ class SetDiagram:
         return set_label_artists
 
 
-class EulerDiagramBase(SetDiagram):
+class EulerDiagramFromSubsetSizes(SetDiagram):
     """Create an area-proportional Euler diagram visualising the relationships
     between two or more sets given the subset sizes.
 
@@ -511,7 +511,7 @@ class EulerDiagramBase(SetDiagram):
         return subset_labels
 
 
-class EulerDiagram(EulerDiagramBase):
+class EulerDiagram(EulerDiagramFromSubsetSizes):
     """Create an area-proportional Euler diagram visualising the relationships
     between two or more sets.
 

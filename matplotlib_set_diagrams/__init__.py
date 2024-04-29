@@ -45,7 +45,7 @@ __email__ = "paulbrodersen+matplotlib_set_diagrams@gmail.com"
 
 
 from ._main import (
-    EulerDiagramBase,
+    EulerDiagramFromSubsetSizes,
     EulerDiagram,
     EulerWordCloud,
     VennDiagram,
@@ -53,7 +53,7 @@ from ._main import (
 )
 
 __all__ = [
-    "EulerDiagramBase",
+    "EulerDiagramFromSubsetSizes",
     "EulerDiagram",
     "EulerWordCloud",
     "VennDiagram",

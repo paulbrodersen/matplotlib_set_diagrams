@@ -12,7 +12,7 @@ from matplotlib_set_diagrams._main import (
     rgba_to_grayscale,
     get_text_alignment,
     SetDiagram,
-    EulerDiagramBase,
+    EulerDiagramFromSubsetSizes,
     EulerDiagram,
     EulerWordCloud,
     VennDiagram,
@@ -46,7 +46,7 @@ def test_SetDiagram():
 
 
 @pytest.mark.mpl_image_compare
-def test_EulerDiagramBase():
+def test_EulerDiagramFromSubsetSizes():
     fig, axes = plt.subplots(2, 3, sharex=True, sharey=True, figsize=(15,10))
     axes = axes.ravel()
 
@@ -56,7 +56,7 @@ def test_EulerDiagramBase():
         (0, 1) : 1,
         (1, 1) : 0.5,
     }
-    EulerDiagramBase(subset_sizes, ax=axes[0])
+    EulerDiagramFromSubsetSizes(subset_sizes, ax=axes[0])
 
     axes[1].set_title("|A| > |B|")
     subset_sizes = {
@@ -64,7 +64,7 @@ def test_EulerDiagramBase():
         (0, 1) : 1,
         (1, 1) : 0.5,
     }
-    EulerDiagramBase(subset_sizes, ax=axes[1])
+    EulerDiagramFromSubsetSizes(subset_sizes, ax=axes[1])
 
     axes[2].set_title(r"A $\supset$ B")
     subset_sizes = {
@@ -72,7 +72,7 @@ def test_EulerDiagramBase():
         (0, 1) : 0,
         (1, 1) : 0.5,
     }
-    EulerDiagramBase(subset_sizes, ax=axes[2])
+    EulerDiagramFromSubsetSizes(subset_sizes, ax=axes[2])
 
     axes[3].set_title(r"A $\sqcup$ B")
     subset_sizes = {
@@ -80,7 +80,7 @@ def test_EulerDiagramBase():
         (0, 1) : 1,
         (1, 1) : 0,
     }
-    EulerDiagramBase(subset_sizes, ax=axes[3])
+    EulerDiagramFromSubsetSizes(subset_sizes, ax=axes[3])
 
     axes[4].set_title("|A| = |B| = |C|")
     subset_sizes = {
@@ -92,7 +92,7 @@ def test_EulerDiagramBase():
         (0, 1, 1) : 0.5,
         (1, 1, 1) : 0.25,
     }
-    EulerDiagramBase(subset_sizes, ax=axes[4])
+    EulerDiagramFromSubsetSizes(subset_sizes, ax=axes[4])
 
     axes[5].set_title("|A| = |B| = |C| = |D|")
     subset_sizes = {
@@ -130,7 +130,7 @@ def test_EulerDiagramBase():
 
         (1, 1, 1, 1) : 0.125,
     }
-    EulerDiagramBase(subset_sizes, ax=axes[5])
+    EulerDiagramFromSubsetSizes(subset_sizes, ax=axes[5])
     return fig
 
 
