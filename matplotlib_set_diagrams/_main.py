@@ -381,7 +381,9 @@ class EulerDiagramFromSubsetSizes(SetDiagram):
             ax            = ax,
         )
 
-        self._hide_subsets([subset for subset, size in subset_sizes.items() if size == 0])
+        # If the layout routine assigned a non-zero area to a zero-size subset, hide it.
+        self._hide_subsets([subset for subset, size in subset_sizes.items() \
+                            if (size == 0) & (self.subset_geometries[subset].area > 0)])
 
 
     def _get_layout(
