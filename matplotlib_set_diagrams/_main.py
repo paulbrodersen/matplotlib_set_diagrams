@@ -146,7 +146,7 @@ class SetDiagram:
             ax            : Optional[plt.Axes]               = None,
     ) -> None:
 
-        subset_ids = [subset_id for subset_id in list(product(*len(origins) * [(False, True)])) if True in subset_id]
+        subset_ids = self._get_subset_ids(len(origins))
         self.subset_geometries : ShapelyPolygon = \
             self._get_subset_geometries(subset_ids, origins, radii)
         self.subset_colors = self._get_subset_colors(subset_ids, set_colors)
@@ -161,6 +161,10 @@ class SetDiagram:
         if set_labels:
             self.set_label_artists = self._draw_set_labels(
                 set_labels, origins, radii, self.ax)
+
+
+    def _get_subset_ids(self, total_sets : int) -> list[Tuple[bool]]:
+        return [subset_id for subset_id in list(product(*total_sets * [(False, True)])) if True in subset_id]
 
 
     def _get_subset_geometries(
