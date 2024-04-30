@@ -164,7 +164,7 @@ class SetDiagram:
 
 
     def _get_subset_ids(self, total_sets : int) -> list[Tuple[bool]]:
-        return [subset_id for subset_id in list(product(*total_sets * [(False, True)])) if True in subset_id]
+        return [subset_id for subset_id in list(product(*total_sets * [(False, True)])) if np.any(subset_id)]
 
 
     def _get_subset_geometries(
@@ -652,11 +652,10 @@ class EulerDiagram(EulerDiagramFromSubsetSizes):
 
         """
         subset_size = dict()
-        for subset_id in list(product(*len(sets) * [(False, True)])):
-            if np.any(subset_id):
-                include_elements = set.intersection(*[sets[ii] for ii, include in enumerate(subset_id) if include])
-                exclude_elements = set.union(*[sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
-                subset_size[subset_id] = len(include_elements - exclude_elements)
+        for subset_id in self._get_subset_ids(len(sets)):
+            include_elements = set.intersection(*[sets[ii] for ii, include in enumerate(subset_id) if include])
+            exclude_elements = set.union(*[sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
+            subset_size[subset_id] = len(include_elements - exclude_elements)
         return subset_size
 
 
@@ -804,11 +803,10 @@ class EulerWordCloud(EulerDiagram):
         subset or not.
         """
         subsets = dict()
-        for subset_id in list(product(*len(sets) * [(False, True)])):
-            if np.any(subset_id):
-                include_elements = set.intersection(*[sets[ii] for ii, include in enumerate(subset_id) if include])
-                exclude_elements = set.union(*[sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
-                subsets[subset_id] = include_elements - exclude_elements
+        for subset_id in self._get_subset_ids(len(sets)):
+            include_elements = set.intersection(*[sets[ii] for ii, include in enumerate(subset_id) if include])
+            exclude_elements = set.union(*[sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
+            subsets[subset_id] = include_elements - exclude_elements
         return subsets
 
 
@@ -940,12 +938,11 @@ class VennDiagram(EulerDiagram):
         """Creates a dictionary mapping subsets to area sizes. The
         values are independent of subset size."""
         subset_size = dict()
-        for subset_id in list(product(*len(sets) * [(False, True)])):
-            if np.any(subset_id):
-                # # Option 1: all subsets are equal size
-                # subset_size[subset_id] = 1
-                # Option 2: intersections half in size with each superset
-                subset_size[subset_id] = 1 / 2**(np.sum(subset_id) - 1)
+        for subset_id in self._get_subset_ids(len(sets)):
+            # # Option 1: all subsets are equal size
+            # subset_size[subset_id] = 1
+            # Option 2: intersections half in size with each superset
+            subset_size[subset_id] = 1 / 2**(np.sum(subset_id) - 1)
         return subset_size
 
 
