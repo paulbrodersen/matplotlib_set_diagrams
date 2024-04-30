@@ -882,11 +882,13 @@ class VennDiagram(EulerDiagram):
     Attributes
     ----------
     subset_sizes : Mapping[Tuple[bool], int | float]
-        The dictionary mapping each subset to its desired size.
+        The dictionary mapping each subset to its actual size.
         Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
         each entry in the tuple indicates if the corresponding set is a superset of the subset.
         For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
         whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
+    subset_areas : Mapping[Tuple[bool], int | float]
+        The dictionary mapping each subset to a desired area size.
     origins : NDArray
         The circle origins.
     radii : NDArray
@@ -904,13 +906,39 @@ class VennDiagram(EulerDiagram):
 
     """
 
-    def _get_subset_sizes(self, sets : list[set]) -> dict[Tuple[bool], int]:
-        """Creates a dictionary mapping subsets to subset size. The
-        subset IDs are tuples of booleans, with each boolean
-        indicating if the corresponding input set is a superset of the
-        subset or not.
+    def __init__(
+            self,
+            sets                    : list[set],
+            subset_labels           : Optional[Mapping[Tuple[bool], str]]       = None,
+            subset_label_formatter  : Callable[[Tuple[bool], int | float], str] = lambda subset, size : str(size),
+            set_labels              : Optional[list[str]]                       = None,
+            set_colors              : Optional[list[ColorType]]                 = None,
+            ax                      : Optional[plt.Axes]                        = None,
+    ) -> None:
 
-        """
+        sets = [set(item) for item in sets]
+        self.subset_sizes = self._get_subset_sizes(sets)
+
+        if subset_labels is None:
+            subset_labels = self._get_subset_labels(
+                self.subset_sizes, subset_label_formatter)
+
+        # Specify area of subset patches independently of actual subset size.
+        self.subset_areas = self._get_subset_areas(sets)
+        EulerDiagramFromSubsetSizes.__init__(self,
+            self.subset_areas,
+            subset_labels           = subset_labels,
+            set_labels              = set_labels,
+            set_colors              = set_colors,
+            cost_function_objective = "simple",
+            verbose                 = False,
+            ax                      = ax,
+        )
+
+
+    def _get_subset_areas(self, sets : list[set]) -> dict[Tuple[bool], int]:
+        """Creates a dictionary mapping subsets to area sizes. The
+        values are independent of subset size."""
         subset_size = dict()
         for subset_id in list(product(*len(sets) * [(False, True)])):
             if np.any(subset_id):
@@ -919,16 +947,6 @@ class VennDiagram(EulerDiagram):
                 # Option 2: intersections half in size with each superset
                 subset_size[subset_id] = 1 / 2**(np.sum(subset_id) - 1)
         return subset_size
-
-
-    def _get_layout(
-            self,
-            subset_sizes : Mapping[Tuple[bool], int | float],
-            cost_function_objective : str,
-            verbose : bool
-    ) -> Tuple[NDArray, NDArray]:
-        return super()._get_layout(
-            subset_sizes, cost_function_objective="simple", verbose=False)
 
 
 class VennWordCloud(EulerWordCloud, VennDiagram):
@@ -973,8 +991,10 @@ class VennWordCloud(EulerWordCloud, VennDiagram):
         each entry in the tuple indicates if the corresponding set is a superset of the subset.
         For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
         whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
-    subset_sizes : dict[Tuple[bool], float]
-        The dictionary mapping each subset to its desired size.
+    subset_sizes : Mapping[Tuple[bool], int | float]
+        The dictionary mapping each subset to its actual size.
+    subset_areas : Mapping[Tuple[bool], int | float]
+        The dictionary mapping each subset to a desired area size.
     origins : NDArray
         The circle origins.
     radii : NDArray
