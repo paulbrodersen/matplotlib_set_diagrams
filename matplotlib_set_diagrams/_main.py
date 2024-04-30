@@ -147,16 +147,20 @@ class SetDiagram:
     ) -> None:
 
         subset_ids = [subset_id for subset_id in list(product(*len(origins) * [(False, True)])) if True in subset_id]
-        self.subset_geometries : ShapelyPolygon = self._get_subset_geometries(subset_ids, origins, radii)
+        self.subset_geometries : ShapelyPolygon = \
+            self._get_subset_geometries(subset_ids, origins, radii)
         self.subset_colors = self._get_subset_colors(subset_ids, set_colors)
         self.ax = self._initialize_axis(ax=ax)
-        self.subset_artists = self._draw_subsets(self.subset_geometries, self.subset_colors, self.ax)
+        self.subset_artists = self._draw_subsets(
+            self.subset_geometries, self.subset_colors, self.ax)
 
         if subset_labels:
-            self.subset_label_artists = self._draw_subset_labels(subset_labels, self.subset_geometries, self.subset_colors, self.ax)
+            self.subset_label_artists = self._draw_subset_labels(
+                subset_labels, self.subset_geometries, self.subset_colors, self.ax)
 
         if set_labels:
-            self.set_label_artists = self._draw_set_labels(set_labels, origins, radii, self.ax)
+            self.set_label_artists = self._draw_set_labels(
+                set_labels, origins, radii, self.ax)
 
 
     def _get_subset_geometries(
