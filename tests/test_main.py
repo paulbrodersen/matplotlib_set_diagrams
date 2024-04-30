@@ -22,7 +22,7 @@ from matplotlib_set_diagrams._main import (
 
 def test_blend_colors():
     np.testing.assert_allclose(blend_colors([(0, 0, 0, 0), (0, 0, 0, 0)]), (0, 0, 0, 0))
-    np.testing.assert_allclose(blend_colors([(255, 255, 255, 1), (255, 255, 255, 1)]), (255, 255, 255, 1))
+    np.testing.assert_allclose(blend_colors([(1, 1, 1, 1), (1, 1, 1, 1)]), (1, 1, 1, 1))
 
 
 def test_rgba_to_grayscale():
