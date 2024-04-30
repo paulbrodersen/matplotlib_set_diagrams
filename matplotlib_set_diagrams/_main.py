@@ -109,7 +109,7 @@ class SetDiagram:
         The circle origins.
     radii : NDArray
         The circle radii.
-    subset_labels : Optional[dict[Tuple(bool), str]]
+    subset_labels : Optional[Mapping[Tuple[bool], str]]
         A dictioanry mapping subsets to their labels.
         If None, no subset labels are created.
     set_labels : Optional[list[str]]
@@ -140,10 +140,10 @@ class SetDiagram:
             self,
             origins       : NDArray,
             radii         : NDArray,
-            subset_labels : Optional[dict[Tuple[bool], str]] = None,
-            set_labels    : Optional[list[str]]              = None,
-            set_colors    : Optional[list]                   = None,
-            ax            : Optional[plt.Axes]               = None,
+            subset_labels : Optional[Mapping[Tuple[bool], str]] = None,
+            set_labels    : Optional[list[str]]                 = None,
+            set_colors    : Optional[list]                      = None,
+            ax            : Optional[plt.Axes]                  = None,
     ) -> None:
 
         subset_ids = self._get_subset_ids(len(origins))
@@ -212,8 +212,8 @@ class SetDiagram:
 
     def _draw_subsets(
             self,
-            subset_geometries : dict[Tuple[bool], ShapelyPolygon],
-            subset_colors     : dict[Tuple[bool], NDArray],
+            subset_geometries : Mapping[Tuple[bool], ShapelyPolygon],
+            subset_colors     : Mapping[Tuple[bool], NDArray],
             ax                : plt.Axes,
     ) -> dict[Tuple[bool], plt.Polygon]:
         """Draw each subset as a separate polygon patch."""
@@ -229,9 +229,9 @@ class SetDiagram:
 
     def _draw_subset_labels(
             self,
-            subset_labels     : dict[Tuple[bool], str],
-            subset_geometries : dict[Tuple[bool], ShapelyPolygon],
-            subset_colors     : dict[Tuple[bool], NDArray],
+            subset_labels     : Mapping[Tuple[bool], str],
+            subset_geometries : Mapping[Tuple[bool], ShapelyPolygon],
+            subset_colors     : Mapping[Tuple[bool], NDArray],
             ax                : plt.Axes,
     ) -> dict[Tuple[bool], plt.Text]:
         """Place subset labels centred on the point of inaccesibility
@@ -305,9 +305,12 @@ class EulerDiagramFromSubsetSizes(SetDiagram):
         each entry in the tuple indicates if the corresponding set is a superset of the subset.
         For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
         whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
-    subset_label_formatter : Optional[Callable]
+    subset_labels : Optional[Mapping[Tuple[bool], str]]
+        A dictionary mapping each subset to its desired label.
+        If None, the subset_label_formatter is used create subset labels based on the subset sizes.
+    subset_label_formatter : Callable[[Tuple[bool], int | float], str]
         The formatter used to create subset labels based on the subset sizes.
-        The function should accept an int or float and return a string.
+        The argument is ignored if subset_labels are not None.
     set_labels : Optional[list[str]]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
@@ -351,31 +354,37 @@ class EulerDiagramFromSubsetSizes(SetDiagram):
     def __init__(
             self,
             subset_sizes            : Mapping[Tuple[bool], int | float],
-            subset_label_formatter  : Callable                  = lambda subset, size : str(size),
-            set_labels              : Optional[list[str]]       = None,
-            set_colors              : Optional[list[ColorType]] = None,
-            cost_function_objective : str                       = "inverse",
-            verbose                 : bool                      = False,
-            ax                      : Optional[plt.Axes]        = None,
+            subset_labels           : Optional[Mapping[Tuple[bool], str]]       = None,
+            subset_label_formatter  : Callable[[Tuple[bool], int | float], str] = lambda subset, size : str(size),
+            set_labels              : Optional[list[str]]                       = None,
+            set_colors              : Optional[list[ColorType]]                 = None,
+            cost_function_objective : str                                       = "inverse",
+            verbose                 : bool                                      = False,
+            ax                      : Optional[plt.Axes]                        = None,
     ) -> None:
 
         self.origins, self.radii = self._get_layout(
             subset_sizes, cost_function_objective, verbose)
 
-        subset_labels = self._get_subset_labels(
-            subset_sizes, subset_label_formatter)
+        if subset_labels is None:
+            subset_labels = self._get_subset_labels(
+                subset_sizes, subset_label_formatter)
 
         if set_labels is None:
             set_labels = self._get_set_labels(len(self.origins))
 
         super().__init__(
-            self.origins, self.radii, subset_labels,
-            set_labels, set_colors, ax)
 
         for subset, size in subset_sizes.items():
             if size == 0:
                 self.subset_artists[subset].set_visible(False)
                 self.subset_label_artists[subset].set_visible(False)
+            self.origins, self.radii,
+            subset_labels = subset_labels,
+            set_labels    = set_labels,
+            set_colors    = set_colors,
+            ax            = ax,
+        )
 
 
     def _get_layout(
@@ -510,7 +519,7 @@ class EulerDiagramFromSubsetSizes(SetDiagram):
     def _get_subset_labels(
             self,
             subset_sizes : Mapping[Tuple[bool], int | float],
-            formatter    : Callable,
+            formatter    : Callable[[Tuple[bool], int | float], str],
     ) -> dict[Tuple[bool], str]:
         """Map subset sizes to strings using the provided formatter."""
         subset_labels = dict()
@@ -552,9 +561,12 @@ class EulerDiagram(EulerDiagramFromSubsetSizes):
     ----------
     sets : list[set]
         The sets.
-    subset_label_formatter : Callable
+    subset_labels : Optional[Mapping[Tuple[bool], str]]
+        A dictionary mapping each subset to its desired label.
+        If None, the subset_label_formatter is used create subset labels based on the subset sizes.
+    subset_label_formatter : Callable[[Tuple[bool], int | float], str]
         The formatter used to create subset labels based on the subset sizes.
-        The function should accept an int or float and return a string.
+        The argument is ignored if subset_labels are not None.
     set_labels : Optional[list[str]]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
@@ -604,12 +616,13 @@ class EulerDiagram(EulerDiagramFromSubsetSizes):
     def __init__(
             self,
             sets                    : list[set],
-            subset_label_formatter  : Callable                  = lambda subset, size : str(size),
-            set_labels              : Optional[list[str]]       = None,
-            set_colors              : Optional[list[ColorType]] = None,
-            cost_function_objective : str                       = "inverse",
-            verbose                 : bool                      = False,
-            ax                      : Optional[plt.Axes]        = None,
+            subset_labels           : Optional[Mapping[Tuple[bool], str]]       = None,
+            subset_label_formatter  : Callable[[Tuple[bool], int | float], str] = lambda subset, size : str(size),
+            set_labels              : Optional[list[str]]                       = None,
+            set_colors              : Optional[list[ColorType]]                 = None,
+            cost_function_objective : str                                       = "inverse",
+            verbose                 : bool                                      = False,
+            ax                      : Optional[plt.Axes]                        = None,
     ) -> None:
 
         sets = [set(item) for item in sets]
@@ -617,6 +630,7 @@ class EulerDiagram(EulerDiagramFromSubsetSizes):
 
         super().__init__(
             self.subset_sizes,
+            subset_labels           = subset_labels,
             subset_label_formatter  = subset_label_formatter,
             set_labels              = set_labels,
             set_colors              = set_colors,
@@ -680,9 +694,12 @@ class EulerWordCloud(EulerDiagram):
         The minimum extent, i.e. :code:`min(width, height)`, of the wordcloud image in pixels.
     wordcloud_kwargs : dict[str, Any]
         Key word arguments passed through to WordCloud.
-    subset_label_formatter : Callable
+    subset_labels : Optional[Mapping[Tuple[bool], str]]
+        A dictionary mapping each subset to its desired label.
+        If None, the subset_label_formatter is used create subset labels based on the subset sizes.
+    subset_label_formatter : Callable[[Tuple[bool], int | float], str]
         The formatter used to create subset labels based on the subset sizes.
-        The function should accept an int or float and return a string.
+        The argument is ignored if subset_labels are not None.
     set_labels : Optional[list[str]]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
@@ -735,18 +752,20 @@ class EulerWordCloud(EulerDiagram):
     def __init__(
             self,
             sets                    : list[set],
-            minimum_resolution      : int                       = 300,
-            wordcloud_kwargs        : dict[str, Any]            = dict(),
-            subset_label_formatter  : Callable                  = lambda subset, size : str(size),
-            set_labels              : Optional[list[str]]       = None,
-            set_colors              : Optional[list[ColorType]] = None,
-            cost_function_objective : str                       = "inverse",
-            verbose                 : bool                      = False,
-            ax                      : Optional[plt.Axes]        = None,
+            minimum_resolution      : int                                       = 300,
+            wordcloud_kwargs        : dict[str, Any]                            = dict(),
+            subset_labels           : Optional[Mapping[Tuple[bool], str]]       = None,
+            subset_label_formatter  : Callable[[Tuple[bool], int | float], str] = lambda subset, size : str(size),
+            set_labels              : Optional[list[str]]                       = None,
+            set_colors              : Optional[list[ColorType]]                 = None,
+            cost_function_objective : str                                       = "inverse",
+            verbose                 : bool                                      = False,
+            ax                      : Optional[plt.Axes]                        = None,
     ) -> None:
 
         super().__init__(
             sets,
+            subset_labels           = subset_labels,
             subset_label_formatter  = subset_label_formatter,
             set_labels              = set_labels,
             set_colors              = set_colors,
@@ -840,9 +859,12 @@ class VennDiagram(EulerDiagram):
     ----------
     sets : list[set]
         The sets.
-    subset_label_formatter : Callable
+    subset_labels : Optional[Mapping[Tuple[bool], str]]
+        A dictionary mapping each subset to its desired label.
+        If None, the subset_label_formatter is used create subset labels based on the subset sizes.
+    subset_label_formatter : Callable[[Tuple[bool], int | float], str]
         The formatter used to create subset labels based on the subset sizes.
-        The function should accept an int or float and return a string.
+        The argument is ignored if subset_labels are not None.
     set_labels : Optional[list[str]]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
@@ -923,9 +945,12 @@ class VennWordCloud(EulerWordCloud, VennDiagram):
         The minimum extent, i.e. :code:`min(width, height)`, of the wordcloud image in pixels.
     wordcloud_kwargs : dict[str, Any]
         Key word arguments passed through to WordCloud.
-    subset_label_formatter : Callable
+    subset_labels : Optional[Mapping[Tuple[bool], str]]
+        A dictionary mapping each subset to its desired label.
+        If None, the subset_label_formatter is used create subset labels based on the subset sizes.
+    subset_label_formatter : Callable[[Tuple[bool], int | float], str]
         The formatter used to create subset labels based on the subset sizes.
-        The function should accept an int or float and return a string.
+        The argument is ignored if subset_labels are not None.
     set_labels : Optional[list[str]]
         A list of set labels.
         If none, defaults to the letters of the alphabet (capitalized).
