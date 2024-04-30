@@ -374,17 +374,14 @@ class EulerDiagramFromSubsetSizes(SetDiagram):
             set_labels = self._get_set_labels(len(self.origins))
 
         super().__init__(
-
-        for subset, size in subset_sizes.items():
-            if size == 0:
-                self.subset_artists[subset].set_visible(False)
-                self.subset_label_artists[subset].set_visible(False)
             self.origins, self.radii,
             subset_labels = subset_labels,
             set_labels    = set_labels,
             set_colors    = set_colors,
             ax            = ax,
         )
+
+        self._hide_subsets([subset for subset, size in subset_sizes.items() if size == 0])
 
 
     def _get_layout(
@@ -526,6 +523,13 @@ class EulerDiagramFromSubsetSizes(SetDiagram):
         for subset, size in subset_sizes.items():
             subset_labels[subset] = formatter(subset, size)
         return subset_labels
+
+
+    def _hide_subsets(self, subsets):
+        for subset in subsets:
+            self.subset_artists[subset].set_visible(False)
+            self.subset_label_artists[subset].set_visible(False)
+
 
 
 class EulerDiagram(EulerDiagramFromSubsetSizes):
