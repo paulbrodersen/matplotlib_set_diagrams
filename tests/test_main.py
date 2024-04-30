@@ -41,7 +41,7 @@ def test_get_text_alignment():
 @pytest.mark.mpl_image_compare
 def test_SetDiagram():
     fig, ax = plt.subplots()
-    SetDiagram([(0,0), (1, 0)], [0.66, 0.66], ax=ax)
+    SetDiagram([(0, 0), (1, 0)], [0.66, 0.66], ax=ax)
     return fig
 
 
