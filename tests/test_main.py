@@ -8,6 +8,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from matplotlib_set_diagrams._main import (
+    get_subset_ids,
+    get_subsets,
+    get_subset_sizes,
     blend_colors,
     rgba_to_grayscale,
     get_text_alignment,
@@ -15,9 +18,64 @@ from matplotlib_set_diagrams._main import (
     EulerDiagramFromSubsetSizes,
     EulerDiagram,
     EulerWordCloud,
+    VennDiagramFromSubsetSizes,
     VennDiagram,
     VennWordCloud,
 )
+
+def test_get_subset_ids():
+    actual = get_subset_ids(2)
+    desired = [(1, 0), (0, 1), (1, 1)]
+    assert set(actual) == set(desired)
+
+    actual = get_subset_ids(3)
+    desired = [
+        (1, 0, 0),
+        (0, 1, 0),
+        (0, 0, 1),
+        (1, 1, 0),
+        (1, 0, 1),
+        (0, 1, 1),
+        (1, 1, 1),
+    ]
+    assert set(actual) == set(desired)
+
+
+def test_get_subsets():
+    actual = get_subsets([{0, 1}, {1, 2}])
+    desired = {
+        (1, 0) : {0},
+        (0, 1) : {2},
+        (1, 1) : {1},
+    }
+    assert actual == desired
+
+    sets = [
+        {0, 1, 2, 3},
+        {4, 1, 5, 3},
+        {6, 2, 5, 3},
+    ]
+    actual = get_subsets(sets)
+    desired = {
+        (1, 0, 0) : {0},
+        (0, 1, 0) : {4},
+        (0, 0, 1) : {6},
+        (1, 1, 0) : {1},
+        (1, 0, 1) : {2},
+        (0, 1, 1) : {5},
+        (1, 1, 1) : {3},
+    }
+    assert actual == desired
+
+
+def test_get_subset_sizes():
+    actual = get_subset_sizes([{0, 1}, {1, 2}])
+    desired = {
+        (1, 0) : 1,
+        (0, 1) : 1,
+        (1, 1) : 1,
+    }
+    assert actual == desired
 
 
 def test_blend_colors():
@@ -185,6 +243,29 @@ def test_EulerWordCloud():
 
     fig, ax = plt.subplots()
     EulerWordCloud(sets, ax=ax)
+    return fig
+
+
+@pytest.mark.mpl_image_compare
+def test_VennDiagramFromSubsetSizes():
+    fig, axes = plt.subplots(1, 2, sharex=True, sharey=True)
+    axes = axes.ravel()
+
+    axes[0].set_title("|A| = |B|")
+    subset_sizes = {
+        (1, 0) : 1,
+        (0, 1) : 1,
+        (1, 1) : 0.5,
+    }
+    VennDiagramFromSubsetSizes(subset_sizes, ax=axes[0])
+
+    axes[1].set_title("|A| > |B|")
+    subset_sizes = {
+        (1, 0) : 2,
+        (0, 1) : 1,
+        (1, 1) : 0.5,
+    }
+    VennDiagramFromSubsetSizes(subset_sizes, ax=axes[1])
     return fig
 
 

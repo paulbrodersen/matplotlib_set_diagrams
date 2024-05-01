@@ -27,6 +27,38 @@ from matplotlib.image import AxesImage
 from shapely.geometry.polygon import Polygon as ShapelyPolygon
 
 
+def get_subset_ids(total_sets : int) -> list[Tuple[bool]]:
+    """Given the number of sets, generate unique subset IDs for all
+    potentially non-empty sets.
+
+    Subsets are represented by tuples of booleans using the
+    inclusion/exclusion nomenclature, i.e.  each entry in the tuple
+    indicates if the corresponding set is a superset of the subset.
+    For example, given the sets A, B, C, the subset (1, 1, 1)
+    corresponds to the intersection of all three sets, whereas (1, 1,
+    0) is the subset formed by the difference between the intersection
+    of A with B, and C.
+
+    """
+    assert total_sets > 1, "Common subsets can only exist for collections of more than one set."
+    return [subset_id for subset_id in list(product(*total_sets * [(False, True)])) if np.any(subset_id)]
+
+
+def get_subsets(sets : list[set]) -> dict[Tuple[bool], set]:
+    """Given a list of sets, create a dictionary mapping subsets to set items."""
+    subsets = dict()
+    for subset_id in get_subset_ids(len(sets)):
+        include_elements = set.intersection(*[sets[ii] for ii, include in enumerate(subset_id) if include])
+        exclude_elements = set.union(*[sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
+        subsets[subset_id] = include_elements - exclude_elements
+    return subsets
+
+
+def get_subset_sizes(sets : list[set]) -> dict[Tuple[bool], int]:
+    """Given a list of sets, create a dictionary mapping subsets to their size."""
+    return {subset_id : len(subset) for subset_id, subset in get_subsets(sets).items()}
+
+
 def blend_colors(colors : list[ColorType], gamma : float = 2.2) -> NDArray:
     # Adapted from: https://stackoverflow.com/a/29321264/2912349
     rgba = np.array([to_rgba(color) for color in colors])
@@ -110,8 +142,11 @@ class SetDiagram:
     radii : NDArray
         The circle radii.
     subset_labels : Optional[Mapping[Tuple[bool], str]]
-        A dictioanry mapping subsets to their labels.
-        If None, no subset labels are created.
+        A dictionary mapping subsets to their labels or None. If None, no subset labels are created.
+        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
+        each entry in the tuple indicates if the corresponding set is a superset of the subset.
+        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
+        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
     set_labels : Optional[list[str]]
         A list of set labels.
         If None, no subset labels are created.
@@ -146,7 +181,7 @@ class SetDiagram:
             ax            : Optional[plt.Axes]                  = None,
     ) -> None:
 
-        subset_ids = self._get_subset_ids(len(origins))
+        subset_ids = get_subset_ids(len(origins))
         self.subset_geometries : ShapelyPolygon = \
             self._get_subset_geometries(subset_ids, origins, radii)
         self.subset_colors = self._get_subset_colors(subset_ids, set_colors)
@@ -161,10 +196,6 @@ class SetDiagram:
         if set_labels:
             self.set_label_artists = self._draw_set_labels(
                 set_labels, origins, radii, self.ax)
-
-
-    def _get_subset_ids(self, total_sets : int) -> list[Tuple[bool]]:
-        return [subset_id for subset_id in list(product(*total_sets * [(False, True)])) if np.any(subset_id)]
 
 
     def _get_subset_geometries(
@@ -306,8 +337,8 @@ class EulerDiagramFromSubsetSizes(SetDiagram):
         For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
         whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
     subset_labels : Optional[Mapping[Tuple[bool], str]]
-        A dictionary mapping each subset to its desired label.
-        If None, the subset_label_formatter is used create subset labels based on the subset sizes.
+        A dictionary mapping each subset to its desired label or None. If None,
+        the subset_label_formatter is used create subset labels based on the subset sizes.
     subset_label_formatter : Callable[[Tuple[bool], int | float], str]
         The formatter used to create subset labels based on the subset sizes.
         The argument is ignored if subset_labels are not None.
@@ -568,8 +599,12 @@ class EulerDiagram(EulerDiagramFromSubsetSizes):
     sets : list[set]
         The sets.
     subset_labels : Optional[Mapping[Tuple[bool], str]]
-        A dictionary mapping each subset to its desired label.
-        If None, the subset_label_formatter is used create subset labels based on the subset sizes.
+        A dictionary mapping each subset to its desired label or None. If None,
+        the subset_label_formatter is used create subset labels based on the subset sizes.
+        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
+        each entry in the tuple indicates if the corresponding set is a superset of the subset.
+        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
+        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
     subset_label_formatter : Callable[[Tuple[bool], int | float], str]
         The formatter used to create subset labels based on the subset sizes.
         The argument is ignored if subset_labels are not None.
@@ -598,10 +633,6 @@ class EulerDiagram(EulerDiagramFromSubsetSizes):
     ----------
     subset_sizes : Mapping[Tuple[bool], int | float]
         The dictionary mapping each subset to its desired size.
-        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
-        each entry in the tuple indicates if the corresponding set is a superset of the subset.
-        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
-        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
     origins : NDArray
         The circle origins.
     radii : NDArray
@@ -632,7 +663,7 @@ class EulerDiagram(EulerDiagramFromSubsetSizes):
     ) -> None:
 
         sets = [set(item) for item in sets]
-        self.subset_sizes = self._get_subset_sizes(sets)
+        self.subset_sizes = get_subset_sizes(sets)
 
         super().__init__(
             self.subset_sizes,
@@ -644,21 +675,6 @@ class EulerDiagram(EulerDiagramFromSubsetSizes):
             verbose                 = verbose,
             ax                      = ax,
         )
-
-
-    def _get_subset_sizes(self, sets : list[set]) -> dict[Tuple[bool], int]:
-        """Creates a dictionary mapping subsets to subset size. The
-        subset IDs are tuples of booleans, with each boolean
-        indicating if the corresponding input set is a superset of the
-        subset or not.
-
-        """
-        subset_size = dict()
-        for subset_id in self._get_subset_ids(len(sets)):
-            include_elements = set.intersection(*[sets[ii] for ii, include in enumerate(subset_id) if include])
-            exclude_elements = set.union(*[sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
-            subset_size[subset_id] = len(include_elements - exclude_elements)
-        return subset_size
 
 
 class EulerWordCloud(EulerDiagram):
@@ -693,15 +709,19 @@ class EulerWordCloud(EulerDiagram):
 
     Parameters
     ----------
-    sets : list[set[Any]]
+    sets : list[set]
         The sets.
     minimum_resolution : int
         The minimum extent, i.e. :code:`min(width, height)`, of the wordcloud image in pixels.
     wordcloud_kwargs : dict[str, Any]
         Key word arguments passed through to WordCloud.
     subset_labels : Optional[Mapping[Tuple[bool], str]]
-        A dictionary mapping each subset to its desired label.
-        If None, the subset_label_formatter is used create subset labels based on the subset sizes.
+        A dictionary mapping subsets to their labels or None. If None,
+        the subset_label_formatter is used create subset labels based on the subset sizes.
+        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
+        each entry in the tuple indicates if the corresponding set is a superset of the subset.
+        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
+        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
     subset_label_formatter : Callable[[Tuple[bool], int | float], str]
         The formatter used to create subset labels based on the subset sizes.
         The argument is ignored if subset_labels are not None.
@@ -731,10 +751,6 @@ class EulerWordCloud(EulerDiagram):
     ----------
     subsets : dict[Tuple[bool], set]
         The dictionary mapping each subset ID to the items in the subset.
-        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
-        each entry in the tuple indicates if the corresponding set is a superset of the subset.
-        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
-        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
     subset_sizes : dict[Tuple[bool], float]
         The dictionary mapping each subset to its desired size.
     origins : NDArray
@@ -778,7 +794,7 @@ class EulerWordCloud(EulerDiagram):
             verbose                 = verbose,
             ax                      = ax,
         )
-        self.subsets = self._get_subsets(sets)
+        self.subsets = get_subsets(sets)
         self.wordcloud = self._get_wordcloud(minimum_resolution, wordcloud_kwargs)
 
 
@@ -796,20 +812,6 @@ class EulerWordCloud(EulerDiagram):
         for subset, artist in subset_label_artists.items():
             artist.set_alpha(0)
         return subset_label_artists
-
-
-    def _get_subsets(self, sets : list[set]) -> dict[Tuple[bool], Any]:
-        """Creates a dictionary mapping subsets to set items. The
-        subset IDs are tuples of booleans, with each boolean
-        indicating if the corresponding input set is a superset of the
-        subset or not.
-        """
-        subsets = dict()
-        for subset_id in self._get_subset_ids(len(sets)):
-            include_elements = set.intersection(*[sets[ii] for ii, include in enumerate(subset_id) if include])
-            exclude_elements = set.union(*[sets[ii] for ii, include in enumerate(subset_id) if not include]) if not np.all(subset_id) else set()
-            subsets[subset_id] = include_elements - exclude_elements
-        return subsets
 
 
     def _get_wordcloud(
@@ -850,7 +852,7 @@ class EulerWordCloud(EulerDiagram):
         return self.ax.imshow(img, interpolation="bilinear", extent=(xmin, xmax, ymin, ymax))
 
 
-class VennDiagram(EulerDiagram):
+class VennDiagramFromSubsetSizes(EulerDiagramFromSubsetSizes):
     """Create an area-equal Venn diagram visualising the relationships
     between two or more sets.
 
@@ -861,8 +863,12 @@ class VennDiagram(EulerDiagram):
 
     Parameters
     ----------
-    sets : list[set]
-        The sets.
+    subset_sizes : Mapping[Tuple[bool], int | float]
+        The dictionary mapping each subset to its size.
+        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
+        each entry in the tuple indicates if the corresponding set is a superset of the subset.
+        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
+        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
     subset_labels : Optional[Mapping[Tuple[bool], str]]
         A dictionary mapping each subset to its desired label.
         If None, the subset_label_formatter is used create subset labels based on the subset sizes.
@@ -881,12 +887,101 @@ class VennDiagram(EulerDiagram):
 
     Attributes
     ----------
-    subset_sizes : Mapping[Tuple[bool], int | float]
-        The dictionary mapping each subset to its actual size.
+    subset_areas : Mapping[Tuple[bool], int | float]
+        The dictionary mapping each subset to a desired area size.
+    origins : NDArray
+        The circle origins.
+    radii : NDArray
+        The circle radii.
+    subset_geometries : dict[Tuple[bool], shapely.geometry.polygon.Polygon]
+        The dictionary mapping each subset to its shapely geometry.
+    subset_artists : dict[tuple[bool], plt.Polygon]
+        The matplotlib Polygon patches representing each subset.
+    subset_label_artists : dict[tuple[bool], plt.Text]
+        The matplotlib text objects used to label each subset.
+    set_label_artists : list[plt.Text]
+        The matplotlib text objects used to label each set.
+    ax : plt.Axes
+        The matplotlib axis instance.
+
+    """
+
+    def __init__(
+            self,
+            subset_sizes            : Mapping[Tuple[bool], int | float],
+            subset_labels           : Optional[Mapping[Tuple[bool], str]]       = None,
+            subset_label_formatter  : Callable[[Tuple[bool], int | float], str] = lambda subset, size : str(size),
+            set_labels              : Optional[list[str]]                       = None,
+            set_colors              : Optional[list[ColorType]]                 = None,
+            ax                      : Optional[plt.Axes]                        = None,
+    ) -> None:
+
+        if subset_labels is None:
+            subset_labels = self._get_subset_labels(
+                subset_sizes, subset_label_formatter)
+
+        # Specify area of subset patches independently of actual subset size.
+        self.subset_areas = self._get_subset_areas(list(subset_sizes.keys()))
+        super().__init__(
+            self.subset_areas,
+            subset_labels           = subset_labels,
+            set_labels              = set_labels,
+            set_colors              = set_colors,
+            cost_function_objective = "simple",
+            verbose                 = False,
+            ax                      = ax,
+        )
+
+
+    def _get_subset_areas(self, subsets : list[Tuple[bool]]) -> dict[Tuple[bool], float]:
+        """Creates a dictionary mapping subsets to area sizes. The
+        values are independent of subset size."""
+        subset_size = dict()
+        for subset_id in subsets:
+            # # Option 1: all subsets are equal size
+            # subset_size[subset_id] = 1
+            # Option 2: intersections half in size with each superset
+            subset_size[subset_id] = 1 / 2**(np.sum(subset_id) - 1)
+        return subset_size
+
+
+class VennDiagram(VennDiagramFromSubsetSizes):
+    """Create an area-equal Venn diagram visualising the relationships
+    between two or more sets.
+
+    Sets are represented through overlapping circles. The size of a
+    subset is indicated by the label of the corresponding patch; the
+    size of the patch, however, is not indicative of the size of the
+    subset, such that even zero-size subsets can be represented.
+
+    Parameters
+    ----------
+    sets : list[set]
+        The sets.
+    subset_labels : Optional[Mapping[Tuple[bool], str]]
+        A dictionary mapping each subset to its desired label or None. If None,
+        the subset_label_formatter is used create subset labels based on the subset sizes.
         Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
         each entry in the tuple indicates if the corresponding set is a superset of the subset.
         For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
         whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
+    subset_label_formatter : Callable[[Tuple[bool], int | float], str]
+        The formatter used to create subset labels based on the subset sizes.
+        The argument is ignored if subset_labels are not None.
+    set_labels : Optional[list[str]]
+        A list of set labels.
+        If none, defaults to the letters of the alphabet (capitalized).
+    set_colors : Optional[list[ColorType]]
+        A corresponding list of matplotlib colors.
+        If none, defaults to the default matplotlib color cycle.
+    ax : Optional[plt.Axes]
+        The matplotlib axis instance to draw onto.
+        If none provided, a new figure with a single axis is instantiated.
+
+    Attributes
+    ----------
+    subset_sizes : Mapping[Tuple[bool], int | float]
+        The dictionary mapping each subset to its actual size.
     subset_areas : Mapping[Tuple[bool], int | float]
         The dictionary mapping each subset to a desired area size.
     origins : NDArray
@@ -917,35 +1012,15 @@ class VennDiagram(EulerDiagram):
     ) -> None:
 
         sets = [set(item) for item in sets]
-        self.subset_sizes = self._get_subset_sizes(sets)
+        self.subset_sizes = get_subset_sizes(sets)
 
-        if subset_labels is None:
-            subset_labels = self._get_subset_labels(
-                self.subset_sizes, subset_label_formatter)
-
-        # Specify area of subset patches independently of actual subset size.
-        self.subset_areas = self._get_subset_areas(sets)
-        EulerDiagramFromSubsetSizes.__init__(self,
-            self.subset_areas,
+        super().__init__(
+            self.subset_sizes,
             subset_labels           = subset_labels,
             set_labels              = set_labels,
             set_colors              = set_colors,
-            cost_function_objective = "simple",
-            verbose                 = False,
             ax                      = ax,
         )
-
-
-    def _get_subset_areas(self, sets : list[set]) -> dict[Tuple[bool], int]:
-        """Creates a dictionary mapping subsets to area sizes. The
-        values are independent of subset size."""
-        subset_size = dict()
-        for subset_id in self._get_subset_ids(len(sets)):
-            # # Option 1: all subsets are equal size
-            # subset_size[subset_id] = 1
-            # Option 2: intersections half in size with each superset
-            subset_size[subset_id] = 1 / 2**(np.sum(subset_id) - 1)
-        return subset_size
 
 
 class VennWordCloud(EulerWordCloud, VennDiagram):
@@ -967,8 +1042,12 @@ class VennWordCloud(EulerWordCloud, VennDiagram):
     wordcloud_kwargs : dict[str, Any]
         Key word arguments passed through to WordCloud.
     subset_labels : Optional[Mapping[Tuple[bool], str]]
-        A dictionary mapping each subset to its desired label.
-        If None, the subset_label_formatter is used create subset labels based on the subset sizes.
+        A dictionary mapping each subset to its desired label or None. If None,
+        the subset_label_formatter is used create subset labels based on the subset sizes.
+        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
+        each entry in the tuple indicates if the corresponding set is a superset of the subset.
+        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
+        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
     subset_label_formatter : Callable[[Tuple[bool], int | float], str]
         The formatter used to create subset labels based on the subset sizes.
         The argument is ignored if subset_labels are not None.
@@ -985,11 +1064,7 @@ class VennWordCloud(EulerWordCloud, VennDiagram):
     Attributes
     ----------
     subsets : dict[Tuple[bool], set]
-        The dictionary mapping each subset ID to the items in the subset.
-        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
-        each entry in the tuple indicates if the corresponding set is a superset of the subset.
-        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
-        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
+        A dictionary mapping each subset ID to the items in the subset.
     subset_sizes : Mapping[Tuple[bool], int | float]
         The dictionary mapping each subset to its actual size.
     subset_areas : Mapping[Tuple[bool], int | float]
