@@ -10,17 +10,12 @@ import matplotlib.pyplot as plt
 from matplotlib_set_diagrams._main import (
     get_subset_ids,
     get_subsets,
-    get_subset_sizes,
     blend_colors,
     rgba_to_grayscale,
     get_text_alignment,
     SetDiagram,
-    EulerDiagramFromSubsetSizes,
     EulerDiagram,
-    EulerWordCloud,
-    VennDiagramFromSubsetSizes,
     VennDiagram,
-    VennWordCloud,
 )
 
 def test_get_subset_ids():
@@ -68,16 +63,6 @@ def test_get_subsets():
     assert actual == desired
 
 
-def test_get_subset_sizes():
-    actual = get_subset_sizes([{0, 1}, {1, 2}])
-    desired = {
-        (1, 0) : 1,
-        (0, 1) : 1,
-        (1, 1) : 1,
-    }
-    assert actual == desired
-
-
 def test_blend_colors():
     np.testing.assert_allclose(blend_colors([(0, 0, 0, 0), (0, 0, 0, 0)]), (0, 0, 0, 0))
     np.testing.assert_allclose(blend_colors([(1, 1, 1, 1), (1, 1, 1, 1)]), (1, 1, 1, 1))
@@ -104,7 +89,7 @@ def test_SetDiagram():
 
 
 @pytest.mark.mpl_image_compare
-def test_EulerDiagramFromSubsetSizes():
+def test_EulerDiagram():
     fig, axes = plt.subplots(2, 3, sharex=True, sharey=True, figsize=(15,10))
     axes = axes.ravel()
 
@@ -114,7 +99,7 @@ def test_EulerDiagramFromSubsetSizes():
         (0, 1) : 1,
         (1, 1) : 0.5,
     }
-    EulerDiagramFromSubsetSizes(subset_sizes, ax=axes[0])
+    EulerDiagram(subset_sizes, ax=axes[0])
 
     axes[1].set_title("|A| > |B|")
     subset_sizes = {
@@ -122,7 +107,7 @@ def test_EulerDiagramFromSubsetSizes():
         (0, 1) : 1,
         (1, 1) : 0.5,
     }
-    EulerDiagramFromSubsetSizes(subset_sizes, ax=axes[1])
+    EulerDiagram(subset_sizes, ax=axes[1])
 
     axes[2].set_title(r"A $\supset$ B")
     subset_sizes = {
@@ -130,7 +115,7 @@ def test_EulerDiagramFromSubsetSizes():
         (0, 1) : 0,
         (1, 1) : 0.5,
     }
-    EulerDiagramFromSubsetSizes(subset_sizes, ax=axes[2])
+    EulerDiagram(subset_sizes, ax=axes[2])
 
     axes[3].set_title(r"A $\sqcup$ B")
     subset_sizes = {
@@ -138,7 +123,7 @@ def test_EulerDiagramFromSubsetSizes():
         (0, 1) : 1,
         (1, 1) : 0,
     }
-    EulerDiagramFromSubsetSizes(subset_sizes, ax=axes[3])
+    EulerDiagram(subset_sizes, ax=axes[3])
 
     axes[4].set_title("|A| = |B| = |C|")
     subset_sizes = {
@@ -150,7 +135,7 @@ def test_EulerDiagramFromSubsetSizes():
         (0, 1, 1) : 0.5,
         (1, 1, 1) : 0.25,
     }
-    EulerDiagramFromSubsetSizes(subset_sizes, ax=axes[4])
+    EulerDiagram(subset_sizes, ax=axes[4])
 
     axes[5].set_title("|A| = |B| = |C| = |D|")
     subset_sizes = {
@@ -188,12 +173,12 @@ def test_EulerDiagramFromSubsetSizes():
 
         (1, 1, 1, 1) : 0.125,
     }
-    EulerDiagramFromSubsetSizes(subset_sizes, ax=axes[5])
+    EulerDiagram(subset_sizes, ax=axes[5])
     return fig
 
 
 @pytest.mark.mpl_image_compare
-def test_EulerDiagram():
+def test_EulerDiagram_from_sets():
     fig, axes = plt.subplots(1, 3)
 
     # canonical example
@@ -201,27 +186,27 @@ def test_EulerDiagram():
         {"Lorem", "ipsum", "dolor"},
         {"dolor", "sit", "amet"}
     ]
-    EulerDiagram(sets, ax=axes[0])
+    EulerDiagram.from_sets(sets, ax=axes[0])
 
     # no intersection
     sets = [
         {"Lorem", "ipsum", "dolor"},
         {"sit", "amet"}
     ]
-    EulerDiagram(sets, ax=axes[1])
+    EulerDiagram.from_sets(sets, ax=axes[1])
 
     # empty set
     sets = [
         {"Lorem", "ipsum", "dolor", "sit", "amet"},
-        {}
+        set()
     ]
-    EulerDiagram(sets, ax=axes[2])
+    EulerDiagram.from_sets(sets, ax=axes[2])
 
     return fig
 
 
 @pytest.mark.mpl_image_compare
-def test_EulerWordCloud():
+def test_EulerDiagram_as_wordcloud():
     text_1 = """Lorem ipsum dolor sit amet, consectetur adipiscing elit,
     sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
     enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi
@@ -246,12 +231,12 @@ def test_EulerWordCloud():
         sets.append(set(words))
 
     fig, ax = plt.subplots()
-    EulerWordCloud(sets, ax=ax)
+    EulerDiagram.as_wordcloud(sets, ax=ax)
     return fig
 
 
 @pytest.mark.mpl_image_compare
-def test_VennDiagramFromSubsetSizes():
+def test_VennDiagram():
     fig, axes = plt.subplots(1, 2, sharex=True, sharey=True)
     axes = axes.ravel()
 
@@ -261,7 +246,7 @@ def test_VennDiagramFromSubsetSizes():
         (0, 1) : 1,
         (1, 1) : 0.5,
     }
-    VennDiagramFromSubsetSizes(subset_sizes, ax=axes[0])
+    VennDiagram(subset_sizes, ax=axes[0])
 
     axes[1].set_title("|A| > |B|")
     subset_sizes = {
@@ -269,22 +254,22 @@ def test_VennDiagramFromSubsetSizes():
         (0, 1) : 1,
         (1, 1) : 0.5,
     }
-    VennDiagramFromSubsetSizes(subset_sizes, ax=axes[1])
+    VennDiagram(subset_sizes, ax=axes[1])
     return fig
 
 
 @pytest.mark.mpl_image_compare
-def test_VennDiagram():
+def test_VennDiagram_from_sets():
     fig, axes = plt.subplots(1, 2)
     # canonical
-    VennDiagram([{0, 1}, {1, 2}], ax=axes[0])
+    VennDiagram.from_sets([{0, 1}, {1, 2}], ax=axes[0])
     # all empty sets
-    VennDiagram([{}, {}], ax=axes[1])
+    VennDiagram.from_sets([set(), set()], ax=axes[1])
     return fig
 
 
 @pytest.mark.mpl_image_compare
-def test_VennWordCloud():
+def test_VennDiagram_as_wordcloud():
     text_1 = """Lorem ipsum dolor sit amet, consectetur adipiscing elit,
     sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
     enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi
@@ -309,5 +294,5 @@ def test_VennWordCloud():
         sets.append(set(words))
 
     fig, ax = plt.subplots()
-    VennWordCloud(sets, ax=ax)
+    VennDiagram.as_wordcloud(sets, ax=ax)
     return fig

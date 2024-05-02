@@ -54,11 +54,6 @@ def get_subsets(sets : list[set]) -> dict[Tuple[bool], set]:
     return subsets
 
 
-def get_subset_sizes(sets : list[set]) -> dict[Tuple[bool], int]:
-    """Given a list of sets, create a dictionary mapping subsets to their size."""
-    return {subset_id : len(subset) for subset_id, subset in get_subsets(sets).items()}
-
-
 def blend_colors(colors : list[ColorType], gamma : float = 2.2) -> NDArray:
     # Adapted from: https://stackoverflow.com/a/29321264/2912349
     rgba = np.array([to_rgba(color) for color in colors])
@@ -299,7 +294,7 @@ class SetDiagram:
         return set_label_artists
 
 
-class EulerDiagramFromSubsetSizes(SetDiagram):
+class EulerDiagram(SetDiagram):
     """Create an area-proportional Euler diagram visualising the relationships
     between two or more sets given the subset sizes.
 
@@ -564,238 +559,44 @@ class EulerDiagramFromSubsetSizes(SetDiagram):
                 self.subset_label_artists[subset].set_visible(False)
 
 
-class EulerDiagram(EulerDiagramFromSubsetSizes):
-    """Create an area-proportional Euler diagram visualising the relationships
-    between two or more sets.
+    @classmethod
+    def from_sets(cls, sets, *args, **kwargs):
+        """Instantiate class from a list of sets, rather than subset sizes.
 
-    Sets are represented through overlapping circles, and the relative
-    arrangement of these circles is determined through a minimisation
-    procedure that attempts to match subset sizes to the corresponding
-    areas formed by circle overlaps in the diagram. However, it is not
-    always possible to find a perfect solution. In these cases, the
-    choice of cost function objective strongly determines which
-    discrepancies between the subset sizes and the corresponding areas
-    likely remain:
+        All other arguments remain the same.
 
-    - With the 'simple' cost function objective, the optimisation simply
-      minimizes the difference between the desired subset areas y and
-      the current subset areas x (i.e. |x - y|). This is particularly
-      useful when all subsets have similar sizes.
-    - The 'squared' cost (i.e. (x - y)^2) penalises larger area discrepancies.
-      Also particularly useful when all subsets have similar sizes.
-    - The 'logarithmic' cost (i.e. |log(x + 1) - log(y + 1)|) scales strongly sublinearly
-      with the size of the subset. This allows small subsets to affect the
-      optimisation more strongly without assigning them the same weight as large subsets.
-      This is useful when some subsets are much smaller than others.
-    - The 'relative' cost (i.e. 1 - min(x/y, y/x)) assigns each subset equal weight.
-    - The 'inverse' cost (i.e. |1 / (x + epsilon) - 1 / (y + epsilon)|)
-      weighs small subsets stronger than large subsets. This is
-      particularly useful when some theoretically possible subsets are
-      absent. The epsilon parameter is arbitrarily set to 1% of the largest set size.
+        """
 
-    Parameters
-    ----------
-    sets : list[set]
-        The sets.
-    subset_labels : Optional[Mapping[Tuple[bool], str]]
-        A dictionary mapping each subset to its desired label or None. If None,
-        the subset_label_formatter is used create subset labels based on the subset sizes.
-        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
-        each entry in the tuple indicates if the corresponding set is a superset of the subset.
-        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
-        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
-    subset_label_formatter : Callable[[Tuple[bool], int | float], str]
-        The formatter used to create subset labels based on the subset sizes.
-        The argument is ignored if subset_labels are not None.
-    set_labels : Optional[list[str]]
-        A list of set labels.
-        If none, defaults to the letters of the alphabet (capitalized).
-    set_colors : Optional[list[ColorType]]
-        A corresponding list of matplotlib colors.
-        If none, defaults to the default matplotlib color cycle.
-    cost_function_objective : str
-        The cost function objective; one of:
-
-        - 'simple'
-        - 'squared'
-        - 'logarithmic'
-        - 'relative'
-        - 'inverse'
-
-    verbose : bool
-        Print a report of the optimisation process.
-    ax : Optional[plt.Axes]
-        The matplotlib axis instance to draw onto.
-        If none provided, a new figure with a single axis is instantiated.
-
-    Attributes
-    ----------
-    subset_sizes : Mapping[Tuple[bool], int | float]
-        The dictionary mapping each subset to its desired size.
-    origins : NDArray
-        The circle origins.
-    radii : NDArray
-        The circle radii.
-    subset_geometries : dict[Tuple[bool], shapely.geometry.polygon.Polygon]
-        The dictionary mapping each subset to its shapely geometry.
-    subset_artists : dict[tuple[bool], plt.Polygon]
-        The matplotlib Polygon patches representing each subset.
-    subset_label_artists : dict[tuple[bool], plt.Text]
-        The matplotlib text objects used to label each subset.
-    set_label_artists : list[plt.Text]
-        The matplotlib text objects used to label each set.
-    ax : plt.Axes
-        The matplotlib axis instance.
-
-    """
-
-    def __init__(
-            self,
-            sets                    : list[set],
-            subset_labels           : Optional[Mapping[Tuple[bool], str]]       = None,
-            subset_label_formatter  : Callable[[Tuple[bool], int | float], str] = lambda subset, size : str(size),
-            set_labels              : Optional[list[str]]                       = None,
-            set_colors              : Optional[list[ColorType]]                 = None,
-            cost_function_objective : str                                       = "inverse",
-            verbose                 : bool                                      = False,
-            ax                      : Optional[plt.Axes]                        = None,
-    ) -> None:
-
-        sets = [set(item) for item in sets]
-        self.subset_sizes = get_subset_sizes(sets)
-
-        super().__init__(
-            self.subset_sizes,
-            subset_labels           = subset_labels,
-            subset_label_formatter  = subset_label_formatter,
-            set_labels              = set_labels,
-            set_colors              = set_colors,
-            cost_function_objective = cost_function_objective,
-            verbose                 = verbose,
-            ax                      = ax,
-        )
+        subsets = get_subsets(sets)
+        subset_sizes = {subset_id : len(subset) for subset_id, subset in subsets.items()}
+        class_instance = cls(subset_sizes, *args, **kwargs)
+        return class_instance
 
 
-class EulerWordCloud(EulerDiagram):
-    """Create an area-proportional Euler diagram visualising the relationships
-    between two or more sets. Fill each subset area with a wordcloud of the
-    items in the subset.
+    @classmethod
+    def as_wordcloud(cls, sets, minimum_resolution=300, wordcloud_kwargs=dict(), *args, **kwargs):
+        """
 
-    Sets are represented through overlapping circles, and the relative
-    arrangement of these circles is determined through a minimisation
-    procedure that attempts to match subset sizes to the corresponding
-    areas formed by circle overlaps in the diagram. However, it is not
-    always possible to find a perfect solution. In these cases, the
-    choice of cost function objective strongly determines which
-    discrepancies between the subset sizes and the corresponding areas
-    likely remain:
+        Instantiate class from a list of sets, rather than subset sizes.
+        Fill each subset area with a wordcloud of the items in the subset.
 
-    - With the 'simple' cost function objective, the optimisation simply
-      minimizes the difference between the desired subset areas y and
-      the current subset areas x (i.e. |x - y|). This is particularly
-      useful when all subsets have similar sizes.
-    - The 'squared' cost (i.e. (x - y)^2) penalises larger area discrepancies.
-      Also particularly useful when all subsets have similar sizes.
-    - The 'logarithmic' cost (i.e. |log(x + 1) - log(y + 1)|) scales strongly sublinearly
-      with the size of the subset. This allows small subsets to affect the
-      optimisation more strongly without assigning them the same weight as large subsets.
-      This is useful when some subsets are much smaller than others.
-    - The 'relative' cost (i.e. 1 - min(x/y, y/x)) assigns each subset equal weight.
-    - The 'inverse' cost (i.e. |1 / (x + epsilon) - 1 / (y + epsilon)|)
-      weighs small subsets stronger than large subsets. This is
-      particularly useful when some theoretically possible subsets are
-      absent. The epsilon parameter is arbitrarily set to 1% of the largest set size.
+        Parameters
+        ----------
+        sets : list[set]
+            The sets.
+        minimum_resolution : int
+            The minimum extent, i.e. :code:`min(width, height)`, of the wordcloud image in pixels.
+        wordcloud_kwargs : dict[str, Any]
+            Key word arguments passed through to WordCloud.
 
-    Parameters
-    ----------
-    sets : list[set]
-        The sets.
-    minimum_resolution : int
-        The minimum extent, i.e. :code:`min(width, height)`, of the wordcloud image in pixels.
-    wordcloud_kwargs : dict[str, Any]
-        Key word arguments passed through to WordCloud.
-    subset_labels : Optional[Mapping[Tuple[bool], str]]
-        A dictionary mapping subsets to their labels or None. If None,
-        the subset_label_formatter is used create subset labels based on the subset sizes.
-        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
-        each entry in the tuple indicates if the corresponding set is a superset of the subset.
-        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
-        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
-    subset_label_formatter : Callable[[Tuple[bool], int | float], str]
-        The formatter used to create subset labels based on the subset sizes.
-        The argument is ignored if subset_labels are not None.
-    set_labels : Optional[list[str]]
-        A list of set labels.
-        If none, defaults to the letters of the alphabet (capitalized).
-    set_colors : Optional[list[ColorType]]
-        A corresponding list of matplotlib colors.
-        If none, defaults to the default matplotlib color cycle.
-    cost_function_objective : str
-        The cost function objective; one of:
-
-        - 'simple'
-        - 'squared'
-        - 'logarithmic'
-        - 'relative'
-        - 'inverse'
-
-    verbose : bool
-        Print a report of the optimisation process.
-    ax : Optional[plt.Axes]
-        The matplotlib axis instance to draw onto.
-        If none provided, a new figure with a single axis is instantiated.
-
-
-    Attributes
-    ----------
-    subsets : dict[Tuple[bool], set]
-        The dictionary mapping each subset ID to the items in the subset.
-    subset_sizes : dict[Tuple[bool], float]
-        The dictionary mapping each subset to its desired size.
-    origins : NDArray
-        The circle origins.
-    radii : NDArray
-        The circle radii.
-    subset_geometries : dict[Tuple[bool], shapely.geometry.polygon.Polygon]
-        The dictionary mapping each subset to its shapely geometry.
-    subset_artists : dict[tuple[bool], plt.Polygon]
-        The matplotlib Polygon patches representing each subset.
-    subset_label_artists : dict[tuple[bool], plt.Text]
-        The matplotlib text objects used to label each subset.
-    set_label_artists : list[plt.Text]
-        The matplotlib text objects used to label each set.
-    ax : plt.Axes
-        The matplotlib axis instance.
-
-    """
-
-    def __init__(
-            self,
-            sets                    : list[set],
-            minimum_resolution      : int                                       = 300,
-            wordcloud_kwargs        : dict[str, Any]                            = dict(),
-            subset_labels           : Optional[Mapping[Tuple[bool], str]]       = None,
-            subset_label_formatter  : Callable[[Tuple[bool], int | float], str] = lambda subset, size : str(size),
-            set_labels              : Optional[list[str]]                       = None,
-            set_colors              : Optional[list[ColorType]]                 = None,
-            cost_function_objective : str                                       = "inverse",
-            verbose                 : bool                                      = False,
-            ax                      : Optional[plt.Axes]                        = None,
-    ) -> None:
-
-        super().__init__(
-            sets,
-            subset_labels           = subset_labels,
-            subset_label_formatter  = subset_label_formatter,
-            set_labels              = set_labels,
-            set_colors              = set_colors,
-            cost_function_objective = cost_function_objective,
-            verbose                 = verbose,
-            ax                      = ax,
-        )
-        self.subsets = get_subsets(sets)
-        self._make_subsets_transparent()
-        self.wordcloud = self._get_wordcloud(minimum_resolution, wordcloud_kwargs)
+        """
+        subsets = get_subsets(sets)
+        subset_sizes = {subset_id : len(subset) for subset_id, subset in subsets.items()}
+        class_instance = cls(subset_sizes, *args, **kwargs)
+        class_instance._make_subsets_transparent()
+        class_instance.wordcloud = class_instance._get_wordcloud(
+            subsets, minimum_resolution, wordcloud_kwargs)
+        return class_instance
 
 
     def _make_subsets_transparent(self) -> None:
@@ -814,6 +615,7 @@ class EulerWordCloud(EulerDiagram):
 
     def _get_wordcloud(
             self,
+            subsets : dict[Tuple[bool], set[str]],
             minimum_resolution : int,
             wordcloud_kwargs : dict[str, Any],
     ) -> AxesImage:
@@ -845,12 +647,12 @@ class EulerWordCloud(EulerDiagram):
                 wc = WordCloud(mask=mask, mode="RGBA", background_color=None,
                                color_func=lambda *args, **kwargs : subset_color,
                                **wordcloud_kwargs)
-                img += wc.generate(" ".join(self.subsets[subset])).to_array() / 255
+                img += wc.generate(" ".join(subsets[subset])).to_array() / 255
 
         return self.ax.imshow(img, interpolation="bilinear", extent=(xmin, xmax, ymin, ymax))
 
 
-class VennDiagramFromSubsetSizes(EulerDiagramFromSubsetSizes):
+class VennDiagram(EulerDiagram):
     """Create an area-equal Venn diagram visualising the relationships
     between two or more sets.
 
@@ -941,168 +743,3 @@ class VennDiagramFromSubsetSizes(EulerDiagramFromSubsetSizes):
             # Option 2: intersections half in size with each superset
             subset_size[subset_id] = 1 / 2**(np.sum(subset_id) - 1)
         return subset_size
-
-
-class VennDiagram(VennDiagramFromSubsetSizes):
-    """Create an area-equal Venn diagram visualising the relationships
-    between two or more sets.
-
-    Sets are represented through overlapping circles. The size of a
-    subset is indicated by the label of the corresponding patch; the
-    size of the patch, however, is not indicative of the size of the
-    subset, such that even zero-size subsets can be represented.
-
-    Parameters
-    ----------
-    sets : list[set]
-        The sets.
-    subset_labels : Optional[Mapping[Tuple[bool], str]]
-        A dictionary mapping each subset to its desired label or None. If None,
-        the subset_label_formatter is used create subset labels based on the subset sizes.
-        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
-        each entry in the tuple indicates if the corresponding set is a superset of the subset.
-        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
-        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
-    subset_label_formatter : Callable[[Tuple[bool], int | float], str]
-        The formatter used to create subset labels based on the subset sizes.
-        The argument is ignored if subset_labels are not None.
-    set_labels : Optional[list[str]]
-        A list of set labels.
-        If none, defaults to the letters of the alphabet (capitalized).
-    set_colors : Optional[list[ColorType]]
-        A corresponding list of matplotlib colors.
-        If none, defaults to the default matplotlib color cycle.
-    ax : Optional[plt.Axes]
-        The matplotlib axis instance to draw onto.
-        If none provided, a new figure with a single axis is instantiated.
-
-    Attributes
-    ----------
-    subset_sizes : Mapping[Tuple[bool], int | float]
-        The dictionary mapping each subset to its actual size.
-    subset_areas : Mapping[Tuple[bool], int | float]
-        The dictionary mapping each subset to a desired area size.
-    origins : NDArray
-        The circle origins.
-    radii : NDArray
-        The circle radii.
-    subset_geometries : dict[Tuple[bool], shapely.geometry.polygon.Polygon]
-        The dictionary mapping each subset to its shapely geometry.
-    subset_artists : dict[tuple[bool], plt.Polygon]
-        The matplotlib Polygon patches representing each subset.
-    subset_label_artists : dict[tuple[bool], plt.Text]
-        The matplotlib text objects used to label each subset.
-    set_label_artists : list[plt.Text]
-        The matplotlib text objects used to label each set.
-    ax : plt.Axes
-        The matplotlib axis instance.
-
-    """
-
-    def __init__(
-            self,
-            sets                    : list[set],
-            subset_labels           : Optional[Mapping[Tuple[bool], str]]       = None,
-            subset_label_formatter  : Callable[[Tuple[bool], int | float], str] = lambda subset, size : str(size),
-            set_labels              : Optional[list[str]]                       = None,
-            set_colors              : Optional[list[ColorType]]                 = None,
-            ax                      : Optional[plt.Axes]                        = None,
-    ) -> None:
-
-        sets = [set(item) for item in sets]
-        self.subset_sizes = get_subset_sizes(sets)
-
-        super().__init__(
-            self.subset_sizes,
-            subset_labels           = subset_labels,
-            set_labels              = set_labels,
-            set_colors              = set_colors,
-            ax                      = ax,
-        )
-
-
-class VennWordCloud(EulerWordCloud, VennDiagram):
-    """Create an area-equal Venn diagram visualising the relationships
-    between two or more sets. Fill each subset area with a wordcloud
-    of the items in the subset.
-
-    Sets are represented through overlapping circles. The size of the
-    patch corresponding to each subset is not indicative of the size
-    of the subset, such that even zero-size subsets can be
-    represented.
-
-    Parameters
-    ----------
-    sets : list[set[Any]]
-        The sets.
-    minimum_resolution : int
-        The minimum extent, i.e. :code:`min(width, height)`, of the wordcloud image in pixels.
-    wordcloud_kwargs : dict[str, Any]
-        Key word arguments passed through to WordCloud.
-    subset_labels : Optional[Mapping[Tuple[bool], str]]
-        A dictionary mapping each subset to its desired label or None. If None,
-        the subset_label_formatter is used create subset labels based on the subset sizes.
-        Subsets are represented by tuples of booleans using the inclusion/exclusion nomenclature, i.e.
-        each entry in the tuple indicates if the corresponding set is a superset of the subset.
-        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
-        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
-    subset_label_formatter : Callable[[Tuple[bool], int | float], str]
-        The formatter used to create subset labels based on the subset sizes.
-        The argument is ignored if subset_labels are not None.
-    set_labels : Optional[list[str]]
-        A list of set labels.
-        If none, defaults to the letters of the alphabet (capitalized).
-    set_colors : Optional[list[ColorType]]
-        A corresponding list of matplotlib colors.
-        If none, defaults to the default matplotlib color cycle.
-    ax : Optional[plt.Axes]
-        The matplotlib axis instance to draw onto.
-        If none provided, a new figure with a single axis is instantiated.
-
-    Attributes
-    ----------
-    subsets : dict[Tuple[bool], set]
-        A dictionary mapping each subset ID to the items in the subset.
-    subset_sizes : Mapping[Tuple[bool], int | float]
-        The dictionary mapping each subset to its actual size.
-    subset_areas : Mapping[Tuple[bool], int | float]
-        The dictionary mapping each subset to a desired area size.
-    origins : NDArray
-        The circle origins.
-    radii : NDArray
-        The circle radii.
-    subset_geometries : dict[Tuple[bool], shapely.geometry.polygon.Polygon]
-        The dictionary mapping each subset to its shapely geometry.
-    subset_artists : dict[tuple[bool], plt.Polygon]
-        The matplotlib Polygon patches representing each subset.
-    subset_label_artists : dict[tuple[bool], plt.Text]
-        The matplotlib text objects used to label each subset.
-    set_label_artists : list[plt.Text]
-        The matplotlib text objects used to label each set.
-    ax : plt.Axes
-        The matplotlib axis instance.
-
-    """
-    def __init__(
-            self,
-            sets                    : list[set],
-            minimum_resolution      : int                                       = 300,
-            wordcloud_kwargs        : dict[str, Any]                            = dict(),
-            subset_labels           : Optional[Mapping[Tuple[bool], str]]       = None,
-            subset_label_formatter  : Callable[[Tuple[bool], int | float], str] = lambda subset, size : str(size),
-            set_labels              : Optional[list[str]]                       = None,
-            set_colors              : Optional[list[ColorType]]                 = None,
-            ax                      : Optional[plt.Axes]                        = None,
-    ) -> None:
-
-        VennDiagram.__init__(self,
-            sets,
-            subset_labels           = subset_labels,
-            subset_label_formatter  = subset_label_formatter,
-            set_labels              = set_labels,
-            set_colors              = set_colors,
-            ax                      = ax,
-        )
-        self.subsets = get_subsets(sets)
-        self._make_subsets_transparent()
-        self.wordcloud = self._get_wordcloud(minimum_resolution, wordcloud_kwargs)
