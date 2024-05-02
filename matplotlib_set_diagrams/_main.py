@@ -564,7 +564,6 @@ class EulerDiagramFromSubsetSizes(SetDiagram):
             self.subset_label_artists[subset].set_visible(False)
 
 
-
 class EulerDiagram(EulerDiagramFromSubsetSizes):
     """Create an area-proportional Euler diagram visualising the relationships
     between two or more sets.
@@ -795,23 +794,22 @@ class EulerWordCloud(EulerDiagram):
             ax                      = ax,
         )
         self.subsets = get_subsets(sets)
+        self._make_transparent()
         self.wordcloud = self._get_wordcloud(minimum_resolution, wordcloud_kwargs)
 
 
-    def _draw_subsets(self, *args, **kwargs):
-        """Draw subsets as before but then make the faces transparent."""
-        subset_artists = super()._draw_subsets(*args, **kwargs)
-        for subset, artist in subset_artists.items():
+    def _make_transparent(self) -> None:
+        """Make subset faces and subset labels transparent, as they
+        would overlap with the word cloud text otherwise.
+        """
+        # We don't use artist.set_alpha(0), as this would also make the artist
+        # edge transparent.
+        for subset, artist in self.subset_artists.items():
             r, g, b, a = artist.get_facecolor()
             artist.set_facecolor((r, g, b, 0.))
-        return subset_artists
 
-
-    def _draw_subset_labels(self, *args, **kwargs):
-        subset_label_artists = super()._draw_subset_labels(*args, **kwargs)
-        for subset, artist in subset_label_artists.items():
+        for subset, artist in self.subset_label_artists.items():
             artist.set_alpha(0)
-        return subset_label_artists
 
 
     def _get_wordcloud(
