@@ -412,9 +412,7 @@ class EulerDiagramFromSubsetSizes(SetDiagram):
             ax            = ax,
         )
 
-        # If the layout routine assigned a non-zero area to a zero-size subset, hide it.
-        self._hide_subsets([subset for subset, size in subset_sizes.items() \
-                            if (size == 0) & (self.subset_geometries[subset].area > 0)])
+        self._hide_empty_subsets(subset_sizes)
 
 
     def _get_layout(
@@ -558,10 +556,12 @@ class EulerDiagramFromSubsetSizes(SetDiagram):
         return subset_labels
 
 
-    def _hide_subsets(self, subsets):
-        for subset in subsets:
-            self.subset_artists[subset].set_visible(False)
-            self.subset_label_artists[subset].set_visible(False)
+    def _hide_empty_subsets(self, subset_sizes : Mapping[Tuple[bool], int | float]) -> None:
+        """If the layout routine assigned a non-zero area to a zero-size subset, hide it."""
+        for subset, size in subset_sizes.items():
+            if (size == 0) & (self.subset_geometries[subset].area > 0):
+                self.subset_artists[subset].set_visible(False)
+                self.subset_label_artists[subset].set_visible(False)
 
 
 class EulerDiagram(EulerDiagramFromSubsetSizes):
@@ -794,11 +794,11 @@ class EulerWordCloud(EulerDiagram):
             ax                      = ax,
         )
         self.subsets = get_subsets(sets)
-        self._make_transparent()
+        self._make_subsets_transparent()
         self.wordcloud = self._get_wordcloud(minimum_resolution, wordcloud_kwargs)
 
 
-    def _make_transparent(self) -> None:
+    def _make_subsets_transparent(self) -> None:
         """Make subset faces and subset labels transparent, as they
         would overlap with the word cloud text otherwise.
         """
@@ -808,8 +808,8 @@ class EulerWordCloud(EulerDiagram):
             r, g, b, a = artist.get_facecolor()
             artist.set_facecolor((r, g, b, 0.))
 
-        for subset, artist in self.subset_label_artists.items():
-            artist.set_alpha(0)
+        for subset, label in self.subset_label_artists.items():
+            label.set_visible(False)
 
 
     def _get_wordcloud(
@@ -1104,4 +1104,5 @@ class VennWordCloud(EulerWordCloud, VennDiagram):
             ax                      = ax,
         )
         self.subsets = get_subsets(sets)
+        self._make_subsets_transparent()
         self.wordcloud = self._get_wordcloud(minimum_resolution, wordcloud_kwargs)
