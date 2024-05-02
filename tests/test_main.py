@@ -222,19 +222,23 @@ def test_EulerDiagram():
 
 @pytest.mark.mpl_image_compare
 def test_EulerWordCloud():
-    test_string_1 = """Lorem ipsum dolor sit amet, consetetur
-    sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore
-    et dolore magna aliquyam erat, sed diam voluptua."""
+    text_1 = """Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+    sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+    enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi
+    ut aliquip ex ea commodo consequat."""
 
-    test_string_2 = """At vero eos et accusam et justo duo dolores et
-    ea rebum. Stet clita kasd gubergren, no sea takimata sanctus
-    est. Lorem ipsum dolor sit amet."""
+    text_2 = """Duis aute irure dolor in reprehenderit in voluptate velit
+    esse cillum dolore eu fugiat nulla pariatur. Lorem ipsum dolor sit
+    amet."""
 
-    # tokenize words
+    # Tokenize words.
+    # The procedure below is a poor-man's tokenization.
+    # Consider using the Natural Language Toolkit (NLTK) instead:
+    # import nltk; words = nltk.word_tokenize(text)
     sets = []
-    for test_string in [test_string_1, test_string_2]:
+    for text in [text_1, text_2]:
         # get a word list
-        words = test_string.split(' ')
+        words = text.split(' ')
         # remove non alphanumeric characters
         words = [''.join(ch for ch in word if ch.isalnum()) for word in words]
         # convert to all lower case
@@ -276,4 +280,34 @@ def test_VennDiagram():
     VennDiagram([{0, 1}, {1, 2}], ax=axes[0])
     # all empty sets
     VennDiagram([{}, {}], ax=axes[1])
+    return fig
+
+
+@pytest.mark.mpl_image_compare
+def test_VennWordCloud():
+    text_1 = """Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+    sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+    enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi
+    ut aliquip ex ea commodo consequat."""
+
+    text_2 = """Duis aute irure dolor in reprehenderit in voluptate velit
+    esse cillum dolore eu fugiat nulla pariatur. Lorem ipsum dolor sit
+    amet."""
+
+    # Tokenize words.
+    # The procedure below is a poor-man's tokenization.
+    # Consider using the Natural Language Toolkit (NLTK) instead:
+    # import nltk; words = nltk.word_tokenize(text)
+    sets = []
+    for text in [text_1, text_2]:
+        # get a word list
+        words = text.split(' ')
+        # remove non alphanumeric characters
+        words = [''.join(ch for ch in word if ch.isalnum()) for word in words]
+        # convert to all lower case
+        words = [word.lower() for word in words]
+        sets.append(set(words))
+
+    fig, ax = plt.subplots()
+    VennWordCloud(sets, ax=ax)
     return fig
