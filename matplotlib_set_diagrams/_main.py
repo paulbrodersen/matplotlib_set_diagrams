@@ -606,7 +606,7 @@ class EulerDiagram(SetDiagram):
         # We don't use artist.set_alpha(0), as this would also make the artist
         # edge transparent.
         for subset, artist in self.subset_artists.items():
-            r, g, b, a = artist.get_facecolor()
+            r, g, b, a = to_rgba(artist.get_facecolor())
             artist.set_facecolor((r, g, b, 0.))
 
         for subset, label in self.subset_label_artists.items():
