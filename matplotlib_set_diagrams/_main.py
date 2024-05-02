@@ -1085,4 +1085,25 @@ class VennWordCloud(EulerWordCloud, VennDiagram):
         The matplotlib axis instance.
 
     """
-    pass
+    def __init__(
+            self,
+            sets                    : list[set],
+            minimum_resolution      : int                                       = 300,
+            wordcloud_kwargs        : dict[str, Any]                            = dict(),
+            subset_labels           : Optional[Mapping[Tuple[bool], str]]       = None,
+            subset_label_formatter  : Callable[[Tuple[bool], int | float], str] = lambda subset, size : str(size),
+            set_labels              : Optional[list[str]]                       = None,
+            set_colors              : Optional[list[ColorType]]                 = None,
+            ax                      : Optional[plt.Axes]                        = None,
+    ) -> None:
+
+        VennDiagram.__init__(self,
+            sets,
+            subset_labels           = subset_labels,
+            subset_label_formatter  = subset_label_formatter,
+            set_labels              = set_labels,
+            set_colors              = set_colors,
+            ax                      = ax,
+        )
+        self.subsets = get_subsets(sets)
+        self.wordcloud = self._get_wordcloud(minimum_resolution, wordcloud_kwargs)
