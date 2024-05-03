@@ -561,9 +561,57 @@ class EulerDiagram(SetDiagram):
 
     @classmethod
     def from_sets(cls, sets, *args, **kwargs):
-        """Instantiate class from a list of sets, rather than subset sizes.
+        """Instantiate the set diagram from a list of sets, rather than subset sizes.
 
-        All other arguments remain the same.
+        Parameters
+        ----------
+        sets : list[set]
+            The sets.
+        subset_labels : Optional[Mapping[Tuple[bool], str]]
+            A dictionary mapping each subset to its desired label or None. If None,
+            the subset_label_formatter is used create subset labels based on the subset sizes.
+        subset_label_formatter : Callable[[Tuple[bool], int | float], str]
+            The formatter used to create subset labels based on the subset sizes.
+            The argument is ignored if subset_labels are not None.
+        set_labels : Optional[list[str]]
+            A list of set labels.
+            If none, defaults to the letters of the alphabet (capitalized).
+        set_colors : Optional[list[ColorType]]
+            A corresponding list of matplotlib colors.
+            If none, defaults to the default matplotlib color cycle.
+        cost_function_objective : str
+            The cost function objective; one of:
+
+            - 'simple'
+            - 'squared'
+            - 'logarithmic'
+            - 'relative'
+            - 'inverse'
+
+            Only applicable when instantiating an :code:`EulerDiagram`.
+        verbose : bool
+            Print a report of the optimisation process.
+            Only applicable when instantiating an :code:`EulerDiagram`.
+        ax : Optional[plt.Axes]
+            The matplotlib axis instance to draw onto.
+            If none provided, a new figure with a single axis is instantiated.
+
+        Attributes
+        ----------
+        origins : NDArray
+            The circle origins.
+        radii : NDArray
+            The circle radii.
+        subset_geometries : dict[Tuple[bool], shapely.geometry.polygon.Polygon]
+            The dictionary mapping each subset to its shapely geometry.
+        subset_artists : dict[tuple[bool], plt.Polygon]
+            The matplotlib Polygon patches representing each subset.
+        subset_label_artists : dict[tuple[bool], plt.Text]
+            The matplotlib text objects used to label each subset.
+        set_label_artists : list[plt.Text]
+            The matplotlib text objects used to label each set.
+        ax : plt.Axes
+            The matplotlib axis instance.
 
         """
 
