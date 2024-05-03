@@ -456,6 +456,7 @@ class EulerDiagram(SetDiagram):
         x0, y0 = 0, 0 # diagram center
         total_sets = len(radii)
         angles = 2 * np.pi * np.linspace(0, 1 - 1/total_sets, total_sets)
+        angles += np.pi # place origin of first set on the left, not the right
         overlap = 0.5 * np.min(radii)
         distances = radii - overlap
         x = x0 + distances * np.cos(angles)
