@@ -698,8 +698,13 @@ class EulerDiagram(SetDiagram):
         subset_sizes = {subset_id : len(subset) for subset_id, subset in subsets.items()}
         class_instance = cls(subset_sizes, *args, **kwargs)
         class_instance._make_subsets_transparent()
-        class_instance.wordcloud = class_instance._get_wordcloud(
-            subsets, minimum_resolution, wordcloud_kwargs)
+        class_instance.wordcloud = class_instance._generate_wordcloud(
+            subsets,
+            subset_geometries  = class_instance.subset_geometries,
+            minimum_resolution = minimum_resolution,
+            wordcloud_kwargs   = wordcloud_kwargs,
+            ax                 = class_instance.ax,
+        )
         return class_instance
 
 
@@ -717,43 +722,79 @@ class EulerDiagram(SetDiagram):
             label.set_visible(False)
 
 
-    def _get_wordcloud(
+    def _generate_wordcloud(
             self,
-            subsets : dict[Tuple[bool], set[str]],
+            subsets            : dict[Tuple[bool], set[str]],
+            subset_geometries  : dict[Tuple[bool], ShapelyPolygon],
             minimum_resolution : int,
-            wordcloud_kwargs : dict[str, Any],
+            wordcloud_kwargs   : dict[str, Any],
+            ax                 : plt.Axes,
     ) -> AxesImage:
 
-        xmin, xmax = self.ax.get_xlim()
-        ymin, ymax = self.ax.get_ylim()
+        subset_masks = self._get_subset_masks(
+            subset_geometries, minimum_resolution, ax)
+
+        subset_images = [
+            self._generate_subset_wordcloud(
+                subset           = subsets[subset_id],
+                mask             = mask,
+                rgba             = self.subset_colors[subset_id],
+                wordcloud_kwargs = wordcloud_kwargs,
+            ) for subset_id, mask in subset_masks.items()
+        ]
+
+        combined_image = np.sum(subset_images, axis=0)
+
+        return self.ax.imshow(combined_image / 255, interpolation="bilinear", extent=ax.axis())
+
+
+    def _get_subset_masks(self, subset_geometries, minimum_resolution, ax):
+        xmin, xmax = ax.get_xlim()
+        ymin, ymax = ax.get_ylim()
         dx = xmax - xmin
         dy = ymax - ymin
 
         if dx < dy:
-            x_resolution = minimum_resolution
-            y_resolution = int(dy / dx * minimum_resolution)
+            width_in_pixel = minimum_resolution
+            height_in_pixel = int(dy / dx * minimum_resolution)
         else:
-            x_resolution = int(dx / dy * minimum_resolution)
-            y_resolution = minimum_resolution
+            width_in_pixel = int(dx / dy * minimum_resolution)
+            height_in_pixel = minimum_resolution
 
-        X, Y = np.meshgrid(np.linspace(xmin, xmax, x_resolution),
-                           np.linspace(ymin, ymax, y_resolution))
+        X, Y = np.meshgrid(np.linspace(xmin, xmax, width_in_pixel),
+                           np.linspace(ymin, ymax, height_in_pixel))
         XY = np.c_[X.ravel(), Y.ravel()]
 
-        img = np.zeros((y_resolution, x_resolution, 4))
-        for subset, geometry in self.subset_geometries.items():
+        subset_masks = dict()
+        for subset_id, geometry in subset_geometries.items():
             if geometry.area > 0:
                 path = Path(geometry.exterior.coords)
-                mask = path.contains_points(XY).reshape((y_resolution, x_resolution))
-                mask = 255 * np.invert(mask).astype(np.uint8) # black is filled by WordCloud
+                mask = path.contains_points(XY).reshape((height_in_pixel, width_in_pixel))
                 mask = np.flipud(mask) # image origin is in the upper left
-                subset_color = tuple(int(255 * channel) for channel in self.subset_colors[subset])
-                wc = WordCloud(mask=mask, mode="RGBA", background_color=None,
-                               color_func=lambda *args, **kwargs : subset_color,
-                               **wordcloud_kwargs)
-                img += wc.generate(" ".join(subsets[subset])).to_array() / 255
+                subset_masks[subset_id] = mask
+        return subset_masks
 
-        return self.ax.imshow(img, interpolation="bilinear", extent=(xmin, xmax, ymin, ymax))
+
+    def _generate_subset_wordcloud(
+            self,
+            subset           : set[str],
+            mask             : NDArray,
+            rgba             : NDArray,
+            wordcloud_kwargs : dict[str, Any],
+    ) -> NDArray:
+
+        mask = 255 * np.invert(mask).astype(np.uint8) # black is filled by WordCloud
+        rgba_as_tuple = tuple(int(255 * channel) for channel in rgba)
+
+        wc = WordCloud(
+            mask             = mask,
+            mode             = "RGBA",
+            background_color = None,
+            color_func       = lambda *args, **kwargs : rgba_as_tuple,
+            **wordcloud_kwargs
+        )
+
+        return wc.generate(" ".join(subset)).to_array()
 
 
 class VennDiagram(EulerDiagram):
