@@ -623,19 +623,75 @@ class EulerDiagram(SetDiagram):
 
     @classmethod
     def as_wordcloud(cls, sets, minimum_resolution=300, wordcloud_kwargs=dict(), *args, **kwargs):
-        """
-
-        Instantiate class from a list of sets, rather than subset sizes.
-        Fill each subset area with a wordcloud of the items in the subset.
+        """Generate a set diagram with word clouds displaying the subset items.
 
         Parameters
         ----------
         sets : list[set]
             The sets.
         minimum_resolution : int
-            The minimum extent, i.e. :code:`min(width, height)`, of the wordcloud image in pixels.
+            The minimum extent of the wordcloud image in pixels (i.e. :code:`min(width, height)`).
+            Larger images take significantly longer to generate.
         wordcloud_kwargs : dict[str, Any]
-            Key word arguments passed through to WordCloud.
+            Key word arguments passed through to wordcloud.WordCloud.
+            Consult the wordcloud documentation [1]_ for a complete list.
+            However, the following arguments are reserved:
+
+            - :code:`mode = 'RGBA'`
+            - :code:`background = None`
+            - :code:`color_func = lambda *args, **kwargs : subset_color`
+
+        subset_labels : Optional[Mapping[Tuple[bool], str]]
+            A dictionary mapping each subset to its desired label or None. If None,
+            the subset_label_formatter is used create subset labels based on the subset sizes.
+        subset_label_formatter : Callable[[Tuple[bool], int | float], str]
+            The formatter used to create subset labels based on the subset sizes.
+            The argument is ignored if subset_labels are not None.
+        set_labels : Optional[list[str]]
+            A list of set labels.
+            If none, defaults to the letters of the alphabet (capitalized).
+        set_colors : Optional[list[ColorType]]
+            A corresponding list of matplotlib colors.
+            If none, defaults to the default matplotlib color cycle.
+        cost_function_objective : str
+            The cost function objective; one of:
+
+            - 'simple'
+            - 'squared'
+            - 'logarithmic'
+            - 'relative'
+            - 'inverse'
+
+            Only applicable when instantiating an :code:`EulerDiagram`.
+        verbose : bool
+            Print a report of the optimisation process.
+            Only applicable when instantiating an :code:`EulerDiagram`.
+        ax : Optional[plt.Axes]
+            The matplotlib axis instance to draw onto.
+            If none provided, a new figure with a single axis is instantiated.
+
+        Attributes
+        ----------
+        origins : NDArray
+            The circle origins.
+        radii : NDArray
+            The circle radii.
+        subset_geometries : dict[Tuple[bool], shapely.geometry.polygon.Polygon]
+            The dictionary mapping each subset to its shapely geometry.
+        subset_artists : dict[tuple[bool], plt.Polygon]
+            The matplotlib Polygon patches representing each subset.
+        subset_label_artists : dict[tuple[bool], plt.Text]
+            The matplotlib text objects used to label each subset.
+        set_label_artists : list[plt.Text]
+            The matplotlib text objects used to label each set.
+        ax : plt.Axes
+            The matplotlib axis instance.
+        wordcloud : matplotlib.image.AxesImage
+            The WordCloud image.
+
+        References
+        ----------
+        _[1]: https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html
 
         """
         subsets = get_subsets(sets)
@@ -652,7 +708,7 @@ class EulerDiagram(SetDiagram):
         would overlap with the word cloud text otherwise.
         """
         # We don't use artist.set_alpha(0), as this would also make the artist
-        # edge transparent.
+        # edge transparent as well.
         for subset, artist in self.subset_artists.items():
             r, g, b, a = to_rgba(artist.get_facecolor())
             artist.set_facecolor((r, g, b, 0.))
