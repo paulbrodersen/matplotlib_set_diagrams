@@ -322,3 +322,19 @@ def test_cost_function_objective():
         ax.set_title(cost_function_objective)
     fig.tight_layout()
     return fig
+
+
+@pytest.mark.mpl_image_compare
+def test_hide_empty_subsets():
+    subset_sizes = {
+        (1, 0, 0) : 1,
+        (0, 1, 0) : 1,
+        (0, 0, 1) : 1,
+        (1, 1, 0) : 0.5,
+        (1, 0, 1) : 0.5,
+        (0, 1, 1) : 0.5,
+        (1, 1, 1) : 0,
+    }
+    fig, ax = plt.subplots()
+    EulerDiagram(subset_sizes, cost_function_objective="simple", ax=ax)
+    return fig
