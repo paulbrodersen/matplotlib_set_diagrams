@@ -96,42 +96,6 @@ def get_text_alignment(dx : float, dy : float) -> Tuple[str, str]:
     return horizontalalignment, verticalalignment
 
 
-def evaluate_layout(
-        desired_areas   : dict[Any, float],
-        displayed_areas : dict[Any, float],
-        verbose         : bool = True,
-) -> dict[str, list[str] | NDArray]:
-    """Evaluate the layout of diagram instance w.r.t. different cost function objectives."""
-
-    area_labels = list(desired_areas.keys())
-    desired = np.array([desired_areas[area] for area in area_labels])
-    displayed = np.array([displayed_areas[area] for area in area_labels])
-    eps = 1e-2 * np.sum(desired)
-
-    performance = {
-        "subset"         : area_labels,
-        "desired area"   : desired,
-        "displayed area" : displayed,
-        "simple"         : np.abs(displayed - desired),
-        "squared"        : (displayed - desired)**2,
-        "relative"       : np.abs([1 - min(x/y, y/x) if x != y else 0. for x, y in zip(displayed, desired)]),
-        "logarithmic"    : np.abs(np.log(displayed + 1) - np.log(desired + 1)),
-        "inverse"        : np.abs(1 / (displayed + eps) - 1 / (desired + eps)),
-    }
-
-    if verbose: # pretty print results
-        paddings = [len(key) for key in performance]
-        # subset IDs are equally long or longer than the string "subset" (=="(0, 0)"):
-        paddings[0] = np.max([len(str(key)) for key in performance["subset"]])
-        print()
-        print(" | ".join([f"{item:>{pad}}" for item, pad in zip(performance.keys(), paddings)]))
-        for row in zip(*performance.values()):
-            print(" | ".join([f"{item:>{pad}.2f}" if isinstance(item, float) else f"{str(item):>{pad}}" for item, pad in zip(row, paddings)]))
-        print()
-
-    return performance
-
-
 class SetDiagram:
     """Draw a diagram visualising the relationships between two or
     more sets using two or more overlapping circles.
