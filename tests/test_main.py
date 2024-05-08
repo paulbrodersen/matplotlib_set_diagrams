@@ -231,7 +231,7 @@ def test_EulerDiagram_as_wordcloud():
         sets.append(set(words))
 
     fig, ax = plt.subplots()
-    EulerDiagram.as_wordcloud(sets, ax=ax)
+    EulerDiagram.as_wordcloud(sets, wordcloud_kwargs=dict(random_state=42), ax=ax)
     return fig
 
 
@@ -294,7 +294,7 @@ def test_VennDiagram_as_wordcloud():
         sets.append(set(words))
 
     fig, ax = plt.subplots()
-    VennDiagram.as_wordcloud(sets, ax=ax)
+    VennDiagram.as_wordcloud(sets, wordcloud_kwargs=dict(random_state=42), ax=ax)
     return fig
 
 
