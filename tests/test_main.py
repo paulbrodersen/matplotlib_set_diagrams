@@ -296,3 +296,29 @@ def test_VennDiagram_as_wordcloud():
     fig, ax = plt.subplots()
     VennDiagram.as_wordcloud(sets, ax=ax)
     return fig
+
+
+@pytest.mark.mpl_image_compare
+def test_cost_function_objective():
+    subset_sizes = {
+        (1, 0, 0) : 1,
+        (0, 1, 0) : 1,
+        (0, 0, 1) : 1,
+        (1, 1, 0) : 0.5,
+        (1, 0, 1) : 0.5,
+        (0, 1, 1) : 0.5,
+        (1, 1, 1) : 0.25,
+    }
+    cost_function_objectives = [
+        "simple",
+        "squared",
+        "logarithmic",
+        "relative",
+        "inverse",
+    ]
+    fig, axes = plt.subplots(1, len(cost_function_objectives), figsize=(15, 3))
+    for cost_function_objective, ax in zip(cost_function_objectives, axes):
+        EulerDiagram(subset_sizes, cost_function_objective=cost_function_objective, ax=ax)
+        ax.set_title(cost_function_objective)
+    fig.tight_layout()
+    return fig
