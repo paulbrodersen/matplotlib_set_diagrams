@@ -16,6 +16,7 @@ keywords = [
          "Venn diagram",
          "set", 
          "visualisation",
+         "visualization",
 ]
 license = {text = "GNU General Public License v3 (GPLv3)"}
 classifiers = [
@@ -43,8 +44,9 @@ Documentation =  "https://matplotlib-set-diagrams.readthedocs.io/en/latest/"
 tests = [
       "pytest",
       "pytest-mpl",
+      "pytest-cov",
 ]
-doc = [
+docs = [
     "sphinx",
     "sphinx-rtd-theme",
     "numpydoc",
