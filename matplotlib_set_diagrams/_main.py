@@ -505,7 +505,7 @@ class EulerDiagram(SetDiagram):
             return np.sum(np.abs(cost))
 
         # constraints:
-        eps = np.min(radii) * 0.001
+        eps = np.min(radii) * 0.01
         lower_bounds = np.abs(radii[np.newaxis, :] - radii[:, np.newaxis]) - eps
         lower_bounds[lower_bounds < 0] = 0
         lower_bounds = squareform(lower_bounds)
