@@ -530,8 +530,8 @@ class EulerDiagram(SetDiagram):
         )
 
         if not result.success:
-            warnings.warn("Warning: could not compute circle positions for given subsets.")
-            warnings.warn(f"scipy.optimize.minimize: {result.message}.")
+            feedback = "Could not optimise circle positions for given subsets. Try a different cost function objective."
+            warnings.warn(f"{result.message}. {feedback}")
 
         origins = result.x.reshape((-1, 2))
 
