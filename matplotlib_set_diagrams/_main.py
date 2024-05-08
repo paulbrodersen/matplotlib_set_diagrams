@@ -209,20 +209,21 @@ class SetDiagram:
             subset_geometries : Mapping[Tuple[bool], ShapelyPolygon],
             subset_colors     : Mapping[Tuple[bool], NDArray],
             ax                : plt.Axes,
-    ) -> dict[Tuple[bool], plt.Polygon]:
+    ) -> dict[Tuple[bool], plt.Polygon | PolyCollection]:
         """Draw each subset as a separate polygon patch."""
-        subset_artists = dict()
+        subset_artists : dict[Tuple[bool], plt.Polygon | PolyCollection] = dict()
         for subset, geometry in subset_geometries.items():
             if geometry.area > 0:
                 if isinstance(geometry, ShapelyPolygon):
-                    artist = plt.Polygon(geometry.exterior.coords, color=subset_colors[subset])
-                    ax.add_patch(artist)
+                    polygon = plt.Polygon(geometry.exterior.coords, color=subset_colors[subset])
+                    ax.add_patch(polygon)
+                    subset_artists[subset] = polygon
                 elif isinstance(geometry, ShapelyMultiPolygon):
-                    artist = PolyCollection([geom.exterior.coords for geom in geometry.geoms], color=subset_colors[subset])
-                    ax.add_collection(artist)
+                    polygon_collection = PolyCollection([geom.exterior.coords for geom in geometry.geoms], color=subset_colors[subset])
+                    ax.add_collection(polygon_collection)
+                    subset_artists[subset] = polygon_collection
                 else:
                     raise TypeError(f"Shapely returned neither a Polygon or MultiPolygon but instead {type(geometry)} object!")
-                subset_artists[subset] = artist
         ax.autoscale_view()
         return subset_artists
 
@@ -678,7 +679,7 @@ class EulerDiagram(SetDiagram):
         # We don't use artist.set_alpha(0), as this would also make the artist
         # edge transparent as well.
         for subset, artist in self.subset_artists.items():
-            r, g, b, a = to_rgba(artist.get_facecolor())
+            r, g, b, a = to_rgba(artist.get_facecolor()) # type: ignore
             artist.set_facecolor((r, g, b, 0.))
 
         for subset, label in self.subset_label_artists.items():
