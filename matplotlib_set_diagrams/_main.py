@@ -546,7 +546,7 @@ class EulerDiagram(SetDiagram):
         )
 
         if not result.success:
-            feedback = "Could not optimise circle positions for given subsets. Try a different cost function objective."
+            feedback = "Could not optimise layout for the given subsets. Try a different cost function objective."
             warnings.warn(f"{result.message}. {feedback}")
 
         origins = result.x.reshape((-1, 2))
