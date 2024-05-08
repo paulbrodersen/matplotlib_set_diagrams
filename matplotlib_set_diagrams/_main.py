@@ -11,6 +11,7 @@ from shapely.geometry import Point
 from shapely.ops import polylabel
 from matplotlib.colors import to_rgba
 from matplotlib.path import Path
+from matplotlib.collections import PolyCollection
 from wordcloud import WordCloud
 
 # type hinting
@@ -24,7 +25,10 @@ from typing import (
 from numpy.typing import NDArray
 from matplotlib.typing import ColorType
 from matplotlib.image import AxesImage
-from shapely.geometry.polygon import Polygon as ShapelyPolygon
+from shapely import (
+    Polygon as ShapelyPolygon,
+    MultiPolygon as ShapelyMultiPolygon,
+)
 
 
 def get_subset_ids(total_sets : int) -> list[Tuple[bool]]:
@@ -246,8 +250,14 @@ class SetDiagram:
         subset_artists = dict()
         for subset, geometry in subset_geometries.items():
             if geometry.area > 0:
-                artist = plt.Polygon(geometry.exterior.coords, color=subset_colors[subset])
-                ax.add_patch(artist)
+                if isinstance(geometry, ShapelyPolygon):
+                    artist = plt.Polygon(geometry.exterior.coords, color=subset_colors[subset])
+                    ax.add_patch(artist)
+                elif isinstance(geometry, ShapelyMultiPolygon):
+                    artist = PolyCollection([geom.exterior.coords for geom in geometry.geoms], color=subset_colors[subset])
+                    ax.add_collection(artist)
+                else:
+                    raise TypeError(f"Shapely returned neither a Polygon or MultiPolygon but instead {type(geometry)} object!")
                 subset_artists[subset] = artist
         ax.autoscale_view()
         return subset_artists
@@ -267,7 +277,13 @@ class SetDiagram:
         for subset, label in subset_labels.items():
             geometry = subset_geometries[subset]
             if geometry.area > 0:
-                poi = polylabel(geometry)
+                if isinstance(geometry, ShapelyPolygon):
+                    poi = polylabel(geometry)
+                elif isinstance(geometry, ShapelyMultiPolygon):
+                    # use largest sub-geometry
+                    poi = polylabel(max(geometry.geoms, key=lambda x:x.area))
+                else:
+                    raise TypeError(f"Shapely returned neither a Polygon or MultiPolygon but instead {type(geometry)} object!")
                 fontcolor = "black" if rgba_to_grayscale(*subset_colors[subset]) > 0.5 else "white"
                 subset_label_artists[subset] = ax.text(
                     poi.x, poi.y, label,
