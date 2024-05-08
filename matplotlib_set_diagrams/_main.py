@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
+import warnings
 
-from warnings import warn
 from itertools import product
 from string import ascii_uppercase
 from scipy.spatial.distance import pdist, squareform
@@ -489,7 +489,9 @@ class EulerDiagram(SetDiagram):
             elif objective == "squared":
                 cost = (subset_areas - desired_areas)**2
             elif objective == "relative":
-                cost = [1 - min(x/y, y/x) if x != y else 0. for x, y in zip(subset_areas, desired_areas)]
+                with warnings.catch_warnings():
+                    warnings.filterwarnings("ignore", message="divide by zero encountered in scalar divide")
+                    cost = [1 - min(x/y, y/x) if x != y else 0. for x, y in zip(subset_areas, desired_areas)]
             elif objective == "logarithmic":
                 cost = np.log(subset_areas + 1) - np.log(desired_areas + 1)
             elif objective == "inverse":
@@ -528,8 +530,8 @@ class EulerDiagram(SetDiagram):
         )
 
         if not result.success:
-            warn("Warning: could not compute circle positions for given subsets.")
-            warn(f"scipy.optimize.minimize: {result.message}.")
+            warnings.warn("Warning: could not compute circle positions for given subsets.")
+            warnings.warn(f"scipy.optimize.minimize: {result.message}.")
 
         origins = result.x.reshape((-1, 2))
 
