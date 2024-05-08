@@ -317,27 +317,7 @@ class EulerDiagram(SetDiagram):
     Sets are represented through overlapping circles, and the relative
     arrangement of these circles is determined through a minimisation
     procedure that attempts to match subset sizes to the corresponding
-    areas formed by circle overlaps in the diagram. However, it is not
-    always possible to find a perfect solution. In these cases, the
-    choice of cost function objective strongly determines which
-    discrepancies between the subset sizes and the corresponding areas
-    likely remain:
-
-    - With the 'simple' cost function objective, the optimisation simply
-      minimizes the difference between the desired subset areas y and
-      the current subset areas x (i.e. |x - y|). This is particularly
-      useful when all subsets have similar sizes.
-    - The 'squared' cost (i.e. (x - y)^2) penalises larger area discrepancies.
-      Also particularly useful when all subsets have similar sizes.
-    - The 'logarithmic' cost (i.e. |log(x + 1) - log(y + 1)|) scales strongly sublinearly
-      with the size of the subset. This allows small subsets to affect the
-      optimisation more strongly without assigning them the same weight as large subsets.
-      This is useful when some subsets are much smaller than others.
-    - The 'relative' cost (i.e. 1 - min(x/y, y/x)) assigns each subset equal weight.
-    - The 'inverse' cost (i.e. |1 / (x + epsilon) - 1 / (y + epsilon)|)
-      weighs small subsets stronger than large subsets. This is
-      particularly useful when some theoretically possible subsets are
-      absent. The epsilon parameter is arbitrarily set to 1% of the largest set size.
+    areas formed by circle overlaps in the diagram.
 
     Parameters
     ----------
@@ -362,11 +342,11 @@ class EulerDiagram(SetDiagram):
     cost_function_objective : str
         The cost function objective; one of:
 
-        - 'simple'
-        - 'squared'
-        - 'logarithmic'
-        - 'relative'
-        - 'inverse'
+        - 'simple'      : |x - y|
+        - 'squared'     : (x - y)^2
+        - 'logarithmic' : |log(x + 1) - log(y + 1)|
+        - 'relative'    : 1 - min(x/y, y/x)
+        - 'inverse'     : |1 / (x + epsilon) - 1 / (y + epsilon)|
 
     verbose : bool
         Print a report of the optimisation process.
@@ -601,11 +581,11 @@ class EulerDiagram(SetDiagram):
         cost_function_objective : str
             The cost function objective; one of:
 
-            - 'simple'
-            - 'squared'
-            - 'logarithmic'
-            - 'relative'
-            - 'inverse'
+            - 'simple'      : |x - y|
+            - 'squared'     : (x - y)^2
+            - 'logarithmic' : |log(x + 1) - log(y + 1)|
+            - 'relative'    : 1 - min(x/y, y/x)
+            - 'inverse'     : |1 / (x + epsilon) - 1 / (y + epsilon)|
 
             Only applicable when instantiating an :code:`EulerDiagram`.
         verbose : bool
@@ -675,11 +655,11 @@ class EulerDiagram(SetDiagram):
         cost_function_objective : str
             The cost function objective; one of:
 
-            - 'simple'
-            - 'squared'
-            - 'logarithmic'
-            - 'relative'
-            - 'inverse'
+            - 'simple'      : |x - y|
+            - 'squared'     : (x - y)^2
+            - 'logarithmic' : |log(x + 1) - log(y + 1)|
+            - 'relative'    : 1 - min(x/y, y/x)
+            - 'inverse'     : |1 / (x + epsilon) - 1 / (y + epsilon)|
 
             Only applicable when instantiating an :code:`EulerDiagram`.
         verbose : bool
