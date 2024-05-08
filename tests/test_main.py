@@ -90,7 +90,7 @@ def test_SetDiagram():
 
 @pytest.mark.mpl_image_compare
 def test_EulerDiagram():
-    fig, axes = plt.subplots(2, 3, sharex=True, sharey=True, figsize=(15,10))
+    fig, axes = plt.subplots(2, 3, figsize=(15,10))
     axes = axes.ravel()
 
     axes[0].set_title("|A| = |B|")
