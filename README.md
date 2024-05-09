@@ -1,0 +1,155 @@
+# Matplotlib Set Diagrams
+
+*Draw Euler diagrams and Venn diagrams with matplotlib.*
+
+Euler and Venn diagrams are used to visualise the relationships between sets. Both typically employ circles to represent sets, and areas where two circles overlap represent subsets common to both supersets.
+Venn diagrams show all possible relationships of inclusion and exclusion between two or more sets.
+In Euler diagrams, the area corresponding to each subset is scaled according to the size of the subset. If a subset doesn't exist, the corresponding area doesn't exist.
+
+
+## Installation
+
+``` shell
+pip install matplotlib_set_diagrams
+```
+
+
+## Documentation
+
+Numerous tutorials, code examples, and a complete documentation of the API can be found on [ReadTheDocs](https://matplotlib_set_diagrams.readthedocs.io/en/latest/index.html).
+
+
+## Quickstart
+
+``` python
+import matplotlib.pyplot as plt
+
+from matplotlib_set_diagrams import EulerDiagram, VennDiagram
+
+fig, axes = plt.subplots(4, 2, figsize=(5, 10))
+
+for ii, SetDiagram in enumerate([EulerDiagram, VennDiagram]):
+
+    axes[0, ii].set_title(SetDiagram.__name__)
+
+    # Initialise from a list of sets:
+    SetDiagram.from_sets(
+        [
+            {"a", "b", "c", "d", "e"},
+            {"e", "f", "g"},
+        ],
+        ax=axes[0, ii])
+
+    # Alternatively, initialise directly from pre-computed subset sizes.
+    SetDiagram(
+        {
+            (1, 0) : 4, # {"a", "b", "c", "d"}
+            (0, 1) : 2, # {"f", "g"}
+            (1, 1) : 1, # {"e"}
+        },
+        ax=axes[1, ii])
+
+    # Visualise subset items as word clouds:
+    text_1 = """Lorem ipsum dolor sit amet, consectetur adipiscing elit,
+    sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut
+    enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi
+    ut aliquip ex ea commodo consequat."""
+
+    text_2 = """Duis aute irure dolor in reprehenderit in voluptate velit
+    esse cillum dolore eu fugiat nulla pariatur. Lorem ipsum dolor sit
+    amet."""
+
+    SetDiagram.as_wordcloud(
+        [set(text.split(' ')) for text in [text_1, text_2]], ax=axes[2, ii])
+
+    # Beyond three-way set diagrams:
+    # This implementation generalises to any number of sets.
+    # However, exact solutions are only guaranteed for two given sets,
+    # and the more sets are given, the less likely it becomes that
+    # the optimisation procedure finds even an approximate solution.
+    # Furthermore, above five or six sets, diagrams often become unintelligible.
+    # Here an example of a 4-way set diagram:
+    SetDiagram(
+        {
+            (1, 0, 0, 0) : 4.0,
+            (0, 1, 0, 0) : 3.0,
+            (0, 0, 1, 0) : 2.0,
+            (0, 0, 0, 1) : 1.0,
+            (1, 1, 0, 0) : 0.9,
+            (1, 0, 1, 0) : 0.8,
+            (1, 0, 0, 1) : 0.7,
+            (0, 1, 1, 0) : 0.6,
+            (0, 1, 0, 1) : 0.5,
+            (0, 0, 1, 1) : 0.4,
+            (1, 1, 1, 0) : 0.3,
+            (1, 1, 0, 1) : 0.25,
+            (1, 0, 1, 1) : 0.2,
+            (0, 1, 1, 1) : 0.15,
+            (1, 1, 1, 1) : 0.1,
+        },
+    ax=axes[3, ii])
+
+fig.tight_layout()
+plt.show()
+
+```
+
+
+## Alternative python libraries
+
+[`matplotlib-venn`](https://github.com/konstantint/matplotlib-venn/): the inspiration for this library. However, `matplotlib-venn` has some significant drawbacks:
+
+1. [It only produces two-way and three-way set diagrams.](https://github.com/konstantint/matplotlib-venn/issues/15)
+2. [There is no support for visualising set contents](https://github.com/konstantint/matplotlib-venn/issues/41) other than external libraries such as my [matplotlib_venn_wordcloud](https://github.com/paulbrodersen/matplotlib_venn_wordcloud).
+3. The layout engine often generates incorrect results for three-way set diagrams, and a lot of issues on the matplotlib-venn issue tracker boil down to this problem. Consider the example below, [adapted from issue #34](https://github.com/konstantint/matplotlib-venn/issues/34):
+
+  - Subset (1, 0, 0) / abC / (A - B - C) is annotated with the label for subset (1, 1, 0) / ABc / (A & B - C).
+  - Subset (1, 1, 0) / ABc / (A & B - C) is not visualised at all.
+
+![matplotlib-venn / matplotlib_set_diagrams comparison](./images/matplotlib_venn_issues.png)
+
+``` python
+import matplotlib.pyplot as plt
+
+from matplotlib_set_diagrams import EulerDiagram
+from matplotlib_venn import venn3
+
+fig, axes = plt.subplots(1, 2, figsize=(6, 3))
+
+subset_sizes = {
+    (1, 0, 0) : 167, # Abc in matplotlib-venn nomenclature
+    (0, 1, 0) : 7,   # aBc
+    (0, 0, 1) : 25,  # abC
+    (1, 1, 0) : 41,  # ABc
+    (0, 1, 1) : 174, # aBC
+    (1, 0, 1) : 171, # AbC
+    (1, 1, 1) : 51,  # ABC
+}
+
+axes[0].set_title("matplotlib-venn")
+print(tuple(subset_sizes.values()))
+# (167, 7, 25, 41, 174, 171, 51)
+venn3(tuple(subset_sizes.values()), ax=axes[0])
+
+axes[1].set_title("matplotlib_set_diagrams")
+EulerDiagram(subset_sizes, ax=axes[1])
+
+plt.show()
+```
+
+[`pyvenn`](https://github.com/tctianchi/pyvenn): Uses pre-built images to produce Venn diagrams for up to 6 sets. The visualisations are hence not area-proportional; only the subset labels are adjusted based on user input.
+
+![pyvenn example visualisation](https://raw.githubusercontent.com/wiki/tctianchi/pyvenn/venn6.png)
+
+[`supervenn`](https://github.com/gecko984/supervenn): Produces area-proportional, Euler diagram-equivalent visualisations, that are, however, not Euler or Venn diagrams. Generalises well to arbitrary numbers of sets and thus easily the superior choice for diagnostic purposes (its intended use-case). However, the produced visualisations are more difficult to communicate to the unfamiliar reader, and thus probably less appropriate for publications.
+
+![supervenn example visualisation](./images/supervenn.png)
+
+``` python
+from supervenn import supervenn
+
+sets = [{1, 2, 3, 4}, {3, 4, 5}, {1, 6, 7, 8}]
+labels = ['alice', 'bob', 'third party']
+supervenn(sets, labels)
+plt.show()
+```
