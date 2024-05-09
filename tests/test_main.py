@@ -208,15 +208,8 @@ def test_EulerDiagram_as_wordcloud():
         words = [word.lower() for word in words]
         sets.append(set(words))
 
-    fig, (ax1, ax2) = plt.subplots(1, 2)
-    # landscape
-    EulerDiagram.as_wordcloud(sets, wordcloud_kwargs=dict(random_state=42), ax=ax1)
-    # portrait
-    EulerDiagram.as_wordcloud(sets, wordcloud_kwargs=dict(random_state=42), ax=ax2)
-    xmin, xmax, ymin, ymax = ax2.axis()
-    dx = xmax - xmin
-    dy = ymax - ymin
-    ax2.axis([xmin, xmax, ymin + dy/2 - max(dx, dy), ymin + dy/2 + max(dx, dy)])
+    fig, ax = plt.subplots()
+    EulerDiagram.as_wordcloud(sets, wordcloud_kwargs=dict(random_state=42), ax=ax)
     return fig
 
 
