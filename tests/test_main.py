@@ -323,3 +323,10 @@ def test_three_way_euler_with_xor_set():
     fig, ax = plt.subplots()
     EulerDiagram.from_sets([set_1, set_2, set_3], ax=ax)
     return fig
+
+
+@pytest.mark.mpl_image_compare
+def test_axis_initialization():
+    diagram = EulerDiagram.from_sets([set(), set()])
+    return diagram.ax.get_figure()
+
