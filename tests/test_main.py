@@ -312,3 +312,14 @@ def test_hide_empty_subsets():
     fig, ax = plt.subplots()
     EulerDiagram(subset_sizes, cost_function_objective="simple", ax=ax)
     return fig
+
+
+@pytest.mark.mpl_image_compare
+def test_three_way_euler_with_xor_set():
+    # adapted from https://github.com/gecko984/supervenn
+    set_1 = {1, 2}
+    set_2 = {2, 3}
+    set_3 = set_1 ^ set_2
+    fig, ax = plt.subplots()
+    EulerDiagram.from_sets([set_1, set_2, set_3], ax=ax)
+    return fig
