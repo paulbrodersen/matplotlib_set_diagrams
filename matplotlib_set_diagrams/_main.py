@@ -4,6 +4,7 @@ import warnings
 
 from itertools import product
 from string import ascii_uppercase
+from collections import Counter
 from scipy.spatial.distance import pdist, squareform
 from scipy.optimize import minimize, NonlinearConstraint
 from shapely import intersection_all, union_all
@@ -758,7 +759,7 @@ class EulerDiagram(SetDiagram):
             **wordcloud_kwargs
         )
 
-        return wc.generate(" ".join(subset)).to_array()
+        return wc.generate_from_frequencies(Counter(subset)).to_array()
 
 
 class VennDiagram(EulerDiagram):
