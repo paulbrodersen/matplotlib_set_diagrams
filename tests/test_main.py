@@ -198,10 +198,6 @@ def test_EulerDiagram_as_wordcloud():
     esse cillum dolore eu fugiat nulla pariatur. Lorem ipsum dolor sit
     amet."""
 
-    # Tokenize words.
-    # The procedure below is a poor-man's tokenization.
-    # Consider using the Natural Language Toolkit (NLTK) instead:
-    # import nltk; words = nltk.word_tokenize(text)
     sets = []
     for text in [text_1, text_2]:
         # get a word list
@@ -261,10 +257,6 @@ def test_VennDiagram_as_wordcloud():
     esse cillum dolore eu fugiat nulla pariatur. Lorem ipsum dolor sit
     amet."""
 
-    # Tokenize words.
-    # The procedure below is a poor-man's tokenization.
-    # Consider using the Natural Language Toolkit (NLTK) instead:
-    # import nltk; words = nltk.word_tokenize(text)
     sets = []
     for text in [text_1, text_2]:
         # get a word list
