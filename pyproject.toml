@@ -56,3 +56,6 @@ docs = [
 
 [tool.setuptools.dynamic]
 version = {attr = "matplotlib_set_diagrams.__version__"}
+
+[tool.setuptools]
+packages = ["matplotlib_set_diagrams"]
