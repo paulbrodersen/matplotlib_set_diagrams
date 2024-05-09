@@ -462,7 +462,7 @@ class EulerDiagram(SetDiagram):
             else:
                 msg = f"The provided cost function objective is not implemented: {objective}."
                 msg += "\nAvailable objectives are: 'simple', 'squared', 'logarithmic', 'relative', and 'inverse'."
-                raise NotImplementedError(msg)
+                raise ValueError(msg)
 
             return np.sum(np.abs(cost))
 

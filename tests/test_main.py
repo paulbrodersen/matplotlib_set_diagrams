@@ -298,6 +298,20 @@ def test_cost_function_objective():
     return fig
 
 
+def test_cost_function_objective_ValueError():
+    subset_sizes = {
+        (1, 0, 0) : 1,
+        (0, 1, 0) : 1,
+        (0, 0, 1) : 1,
+        (1, 1, 0) : 0.5,
+        (1, 0, 1) : 0.5,
+        (0, 1, 1) : 0.5,
+        (1, 1, 1) : 0.25,
+    }
+    with pytest.raises(ValueError):
+        EulerDiagram(subset_sizes, cost_function_objective="Lorem ipsum")
+
+
 @pytest.mark.mpl_image_compare
 def test_hide_empty_subsets():
     subset_sizes = {
