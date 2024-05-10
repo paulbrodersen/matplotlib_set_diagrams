@@ -38,9 +38,12 @@ __author__ = "Paul Brodersen"
 __email__ = "paulbrodersen+matplotlib_set_diagrams@gmail.com"
 
 
-from ._main import (
+from ._diagram_classes import (
     EulerDiagram,
     VennDiagram,
+)
+
+from ._utils import (
     get_subset_ids,
     get_subsets,
 )
