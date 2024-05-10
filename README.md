@@ -190,7 +190,7 @@ plt.show()
 
 ## Contributing & Support
 
-If you get stuck and have a question that is not covered in the documentation, please raise an issue on the issue tracker](https://github.com/paulbrodersen/matplotlib_set_diagrams/issues).
+If you get stuck and have a question that is not covered in the documentation, please raise an issue on the [issue tracker](https://github.com/paulbrodersen/matplotlib_set_diagrams/issues).
 If applicable, make a sketch of the desired result.
 If you submit a bug report, please make sure to include the complete error trace. Include any relevant code and data in a [minimal, reproducible example](https://stackoverflow.com/help/minimal-reproducible-example).
 Pull requests are always welcome.
