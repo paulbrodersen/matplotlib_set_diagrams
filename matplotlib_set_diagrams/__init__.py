@@ -33,7 +33,7 @@ This library was inspired by [matplotlib-venn](https://github.com/konstantint/ma
 
 """
 
-__version__ = "0.0.0"
+__version__ = "0.0.1"
 __author__ = "Paul Brodersen"
 __email__ = "paulbrodersen+matplotlib_set_diagrams@gmail.com"
 
