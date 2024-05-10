@@ -16,12 +16,12 @@ pip install matplotlib_set_diagrams
 
 ## Documentation
 
-Numerous tutorials, code examples, and a complete documentation of the API can be found on [ReadTheDocs](https://matplotlib_set_diagrams.readthedocs.io/en/latest/index.html).
+Numerous tutorials, code examples, and a complete documentation of the API can be found on [ReadTheDocs](https://matplotlib-set-diagrams.readthedocs.io/en/latest/index.html).
 
 
 ## Quickstart
 
-This section is for the impatient. For more comprehensive, step-by-step guides, please consult the [documentation](https://matplotlib_set_diagrams.readthedocs.io/en/latest/sphinx_gallery_output/index.html).
+This section is for the impatient. For more comprehensive, step-by-step guides, please consult the [documentation](https://matplotlib-set-diagrams.readthedocs.io/en/latest/sphinx_gallery_output/index.html).
 
 ![Quickstart output figure](./images/quickstart.png)
 
