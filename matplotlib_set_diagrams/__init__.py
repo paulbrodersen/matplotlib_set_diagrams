@@ -41,9 +41,13 @@ __email__ = "paulbrodersen+matplotlib_set_diagrams@gmail.com"
 from ._main import (
     EulerDiagram,
     VennDiagram,
+    get_subset_ids,
+    get_subsets,
 )
 
 __all__ = [
     "EulerDiagram",
     "VennDiagram",
+    "get_subset_ids",
+    "get_subsets",
 ]

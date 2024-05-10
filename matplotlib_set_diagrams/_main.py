@@ -36,13 +36,18 @@ def get_subset_ids(total_sets : int) -> list[Tuple[bool]]:
     """Given the number of sets, generate unique subset IDs for all
     potentially non-empty sets.
 
-    Subsets are represented by tuples of booleans using the
-    inclusion/exclusion nomenclature, i.e.  each entry in the tuple
-    indicates if the corresponding set is a superset of the subset.
-    For example, given the sets A, B, C, the subset (1, 1, 1)
-    corresponds to the intersection of all three sets, whereas (1, 1,
-    0) is the subset formed by the difference between the intersection
-    of A with B, and C.
+    Parameters
+    ----------
+    total_sets : int
+        The number of sets.
+
+    Returns
+    -------
+    subset_ids : list[Tuple[bool]]
+        Subsets IDs are tuples of booleans using the inclusion/exclusion nomenclature, i.e.
+        each entry in the tuple indicates if the corresponding set is a superset of the subset.
+        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
+        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
 
     """
     assert total_sets > 1, "Subset intersections can only exist for collections of more than one set."
@@ -50,7 +55,23 @@ def get_subset_ids(total_sets : int) -> list[Tuple[bool]]:
 
 
 def get_subsets(sets : list[set]) -> dict[Tuple[bool], set]:
-    """Given a list of sets, create a dictionary mapping subsets to set items."""
+    """Given a list of sets, create a dictionary mapping subsets to set items.
+
+    Parameters
+    ----------
+    sets : list[set]
+        The sets.
+
+    Returns
+    -------
+    subsets : dict[Tuple[bool], set]
+        A dictionary mapping subset IDs to subset items.
+        Subsets IDs are tuples of booleans using the inclusion/exclusion nomenclature, i.e.
+        each entry in the tuple indicates if the corresponding set is a superset of the subset.
+        For example, given the sets A, B, C, the subset (1, 1, 1) corresponds to the intersection of all three sets,
+        whereas (1, 1, 0) is the subset formed by the difference between the intersection of A with B, and C.
+
+    """
     subsets = dict()
     for subset_id in get_subset_ids(len(sets)):
         include_elements = set.intersection(*[sets[ii] for ii, include in enumerate(subset_id) if include])
