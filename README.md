@@ -1,8 +1,8 @@
 # Matplotlib Set Diagrams
 
-*Draw Euler diagrams and Venn diagrams with matplotlib.*
+*Draw Euler diagrams and Venn diagrams with Matplotlib.*
 
-Euler and Venn diagrams are used to visualise the relationships between sets. Both typically employ circles to represent sets, and areas where two circles overlap represent subsets common to both supersets.
+[Euler](https://en.wikipedia.org/wiki/Euler_diagram) and [Venn](https://en.wikipedia.org/wiki/Venn_diagram) diagrams are used to visualise the relationships between sets. Both typically employ circles to represent sets, and areas where two circles overlap represent subsets common to both supersets.
 Venn diagrams show all possible relationships of inclusion and exclusion between two or more sets.
 In Euler diagrams, the area corresponding to each subset is scaled according to the size of the subset. If a subset doesn't exist, the corresponding area doesn't exist.
 

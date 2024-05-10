@@ -23,19 +23,13 @@
 """Matplotlib Set Diagrams
 =======================
 
-A python library to plot [Venn
-diagrams](https://en.wikipedia.org/wiki/Venn_diagram) and
-area-proportional [Euler
-diagrams](https://en.wikipedia.org/wiki/Euler_diagram). Euler diagrams
-are similar to Venn diagrams, in as much as they visualize set
-relationships. However, unlike Venn diagrams, which show all possible
-relations between different sets, Euler diagrams show only relevant
-relationships, i.e. non-empty subsets.
+*Draw Euler diagrams and Venn diagrams with Matplotlib.*
 
-This library was inspired by
-[matplotlib-venn](https://github.com/konstantint/matplotlib-venn), but
-developed
-[independently](https://github.com/konstantint/matplotlib-venn/issues/35).
+[Euler](https://en.wikipedia.org/wiki/Euler_diagram) and [Venn](https://en.wikipedia.org/wiki/Venn_diagram) diagrams are used to visualise the relationships between sets. Both typically employ circles to represent sets, and areas where two circles overlap represent subsets common to both supersets.
+Venn diagrams show all possible relationships of inclusion and exclusion between two or more sets.
+In Euler diagrams, the area corresponding to each subset is scaled according to the size of the subset. If a subset doesn't exist, the corresponding area doesn't exist.
+
+This library was inspired by [matplotlib-venn](https://github.com/konstantint/matplotlib-venn), but developed independently.
 
 """
 
