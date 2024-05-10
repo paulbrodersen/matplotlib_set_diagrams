@@ -38,14 +38,12 @@ def word_tokenize(text):
     >>> import nltk; words = nltk.word_tokenize(text)
 
     """
-
     # get a word list
     words = text.split(' ')
     # remove non alphanumeric characters
     words = [''.join(ch for ch in word if ch.isalnum()) for word in words]
     # convert to all lower case
     words = [word.lower() for word in words]
-
     return words
 
 # Tokenize strings.

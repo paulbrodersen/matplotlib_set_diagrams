@@ -35,8 +35,28 @@ for ii, SetDiagram in enumerate([EulerDiagram, VennDiagram]):
     esse cillum dolore eu fugiat nulla pariatur. Lorem ipsum dolor sit
     amet."""
 
-    SetDiagram.as_wordcloud(
-        [set(text.split(' ')) for text in [text_1, text_2]], ax=axes[2, ii])
+    def word_tokenize(text):
+        """Break a string into its constituent words, and convert the words
+        into their 'standard' form (tokens).
+
+        The procedure below is a poor-man's tokenization.
+        Consider using the Natural Language Toolkit (NLTK) instead:
+
+        >>> import nltk; words = nltk.word_tokenize(text)
+
+        """
+        # get a word list
+        words = text.split(' ')
+        # remove non alphanumeric characters
+        words = [''.join(ch for ch in word if ch.isalnum()) for word in words]
+        # convert to all lower case
+        words = [word.lower() for word in words]
+        return words
+
+    # Tokenize strings.
+    sets = [set(word_tokenize(text)) for text in [text_1, text_2]]
+
+    SetDiagram.as_wordcloud(sets, ax=axes[2, ii])
 
     # The implementation generalises to any number of sets.
     # However, exact solutions are only guaranteed for two given sets,
@@ -65,4 +85,5 @@ for ii, SetDiagram in enumerate([EulerDiagram, VennDiagram]):
     ax=axes[3, ii])
 
 fig.tight_layout()
+fig.savefig("images/quickstart.png", dpi=300)
 plt.show()
