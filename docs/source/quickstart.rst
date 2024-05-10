@@ -11,11 +11,9 @@ This section is for the impatient. For more comprehensive, step-by-step guides, 
 
     from matplotlib_set_diagrams import EulerDiagram, VennDiagram
 
-    fig, axes = plt.subplots(4, 2, figsize=(5, 10))
+    fig, axes = plt.subplots(2, 4, figsize=(15, 5))
 
     for ii, SetDiagram in enumerate([EulerDiagram, VennDiagram]):
-
-        axes[0, ii].set_title(SetDiagram.__name__)
 
         # Initialise from a list of sets:
         SetDiagram.from_sets(
@@ -23,7 +21,7 @@ This section is for the impatient. For more comprehensive, step-by-step guides, 
                 {"a", "b", "c", "d", "e"},
                 {"e", "f", "g"},
             ],
-            ax=axes[0, ii])
+            ax=axes[ii, 0])
 
         # Alternatively, initialise directly from pre-computed subset sizes.
         SetDiagram(
@@ -32,7 +30,7 @@ This section is for the impatient. For more comprehensive, step-by-step guides, 
                 (0, 1) : 2, # {"f", "g"}
                 (1, 1) : 1, # {"e"}
             },
-            ax=axes[1, ii])
+            ax=axes[ii, 1])
 
         # Visualise subset items as word clouds:
         text_1 = """Lorem ipsum dolor sit amet, consectetur adipiscing elit,
@@ -65,13 +63,13 @@ This section is for the impatient. For more comprehensive, step-by-step guides, 
         # Tokenize strings.
         sets = [set(word_tokenize(text)) for text in [text_1, text_2]]
 
-        SetDiagram.as_wordcloud(sets, ax=axes[2, ii])
+        SetDiagram.as_wordcloud(sets, ax=axes[ii, 2])
 
         # The implementation generalises to any number of sets.
         # However, exact solutions are only guaranteed for two given sets,
         # and the more sets are given, the less likely it becomes that
         # the optimisation procedure finds even an approximate solution.
-        # Furthermore, above five or six sets, diagrams become unintelligible.
+        # Furthermore, above four or five sets, diagrams become unintelligible.
         # Here an example of a 4-way set diagram:
         SetDiagram(
             {
@@ -91,7 +89,20 @@ This section is for the impatient. For more comprehensive, step-by-step guides, 
                 (0, 1, 1, 1) : 0.15,
                 (1, 1, 1, 1) : 0.1,
             },
-        ax=axes[3, ii])
+        ax=axes[ii, 3])
+
+        # set row titles
+        axes[ii, 0].annotate(
+            SetDiagram.__name__,
+            xy         = (0, 0.5),
+            xycoords   = 'axes fraction',
+            xytext     = (-10, 0),
+            textcoords = "offset points",
+            ha         = 'right',
+            va         = 'center',
+            fontsize   = 'large',
+            fontweight = 'bold',
+        )
 
     fig.tight_layout()
     plt.show()
