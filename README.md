@@ -6,6 +6,10 @@
 Venn diagrams show all possible relationships of inclusion and exclusion between two or more sets.
 In Euler diagrams, the area corresponding to each subset is scaled according to the size of the subset. If a subset doesn't exist, the corresponding area doesn't exist.
 
+This library was inspired by [`matplotlib-venn`](https://github.com/konstantint/matplotlib-venn/), but developed independently. It adds support for creating set diagrams for an arbitrary number of sets, visualising set and subset contents, and implements an improved layout engine. For more details, [see below](https://github.com/paulbrodersen/matplotlib_set_diagrams?tab=readme-ov-file#alternative-python-libraries).
+
+This library also improves on and replaces [`matplotlib_venn_wordcloud`](https://github.com/paulbrodersen/matplotlib_venn_wordcloud).
+
 
 ## Installation
 
@@ -134,7 +138,7 @@ plt.show()
 [`matplotlib-venn`](https://github.com/konstantint/matplotlib-venn/): the inspiration for this library. However, `matplotlib-venn` has some significant drawbacks:
 
 1. [It only produces two-way and three-way set diagrams.](https://github.com/konstantint/matplotlib-venn/issues/15)
-2. [There is no support for visualising set contents](https://github.com/konstantint/matplotlib-venn/issues/41) other than external libraries such as my [matplotlib_venn_wordcloud](https://github.com/paulbrodersen/matplotlib_venn_wordcloud).
+2. [There is no support for visualising set contents](https://github.com/konstantint/matplotlib-venn/issues/41) other than external libraries such as my [`matplotlib_venn_wordcloud`](https://github.com/paulbrodersen/matplotlib_venn_wordcloud).
 3. The layout engine often generates incorrect results for three-way set diagrams, and a lot of issues on the matplotlib-venn issue tracker boil down to this problem. Consider the example below, [adapted from issue #34](https://github.com/konstantint/matplotlib-venn/issues/34):
 
   - Subset (1, 0, 0) / abC / (A - B - C) is annotated with the label for subset (1, 1, 0) / ABc / (A & B - C).
