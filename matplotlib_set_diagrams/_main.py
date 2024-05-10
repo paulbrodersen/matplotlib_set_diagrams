@@ -45,7 +45,7 @@ def get_subset_ids(total_sets : int) -> list[Tuple[bool]]:
     of A with B, and C.
 
     """
-    assert total_sets > 1, "Common subsets can only exist for collections of more than one set."
+    assert total_sets > 1, "Subset intersections can only exist for collections of more than one set."
     return [subset_id for subset_id in list(product(*total_sets * [(False, True)])) if np.any(subset_id)]
 
 
