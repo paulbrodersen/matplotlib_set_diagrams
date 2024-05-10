@@ -250,11 +250,11 @@ class EulerDiagram(SetDiagram):
     cost_function_objective : str
         The cost function objective; one of:
 
-        - 'simple'      : |x - y|
-        - 'squared'     : (x - y)^2
-        - 'logarithmic' : |log(x + 1) - log(y + 1)|
-        - 'relative'    : 1 - min(x/y, y/x)
-        - 'inverse'     : |1 / (x + epsilon) - 1 / (y + epsilon)|
+        - 'simple'      : :code:`|x - y|`
+        - 'squared'     : :code:`(x - y)^2`
+        - 'logarithmic' : :code:`|log(x + 1) - log(y + 1)|`
+        - 'relative'    : :code:`1 - min(x/y, y/x)`
+        - 'inverse'     : :code:`|1 / (x + epsilon) - 1 / (y + epsilon)|`
 
     verbose : bool
         Print a report of the optimisation process.
@@ -489,11 +489,11 @@ class EulerDiagram(SetDiagram):
         cost_function_objective : str
             The cost function objective; one of:
 
-            - 'simple'      : |x - y|
-            - 'squared'     : (x - y)^2
-            - 'logarithmic' : |log(x + 1) - log(y + 1)|
-            - 'relative'    : 1 - min(x/y, y/x)
-            - 'inverse'     : |1 / (x + epsilon) - 1 / (y + epsilon)|
+            - 'simple'      : :code:`|x - y|`
+            - 'squared'     : :code:`(x - y)^2`
+            - 'logarithmic' : :code:`|log(x + 1) - log(y + 1)|`
+            - 'relative'    : :code:`1 - min(x/y, y/x)`
+            - 'inverse'     : :code:`|1 / (x + epsilon) - 1 / (y + epsilon)|`
 
             Only applicable when instantiating an :code:`EulerDiagram`.
         verbose : bool
@@ -563,11 +563,11 @@ class EulerDiagram(SetDiagram):
         cost_function_objective : str
             The cost function objective; one of:
 
-            - 'simple'      : |x - y|
-            - 'squared'     : (x - y)^2
-            - 'logarithmic' : |log(x + 1) - log(y + 1)|
-            - 'relative'    : 1 - min(x/y, y/x)
-            - 'inverse'     : |1 / (x + epsilon) - 1 / (y + epsilon)|
+            - 'simple'      : :code:`|x - y|`
+            - 'squared'     : :code:`(x - y)^2`
+            - 'logarithmic' : :code:`|log(x + 1) - log(y + 1)|`
+            - 'relative'    : :code:`1 - min(x/y, y/x)`
+            - 'inverse'     : :code:`|1 / (x + epsilon) - 1 / (y + epsilon)|`
 
             Only applicable when instantiating an :code:`EulerDiagram`.
         verbose : bool
@@ -598,7 +598,7 @@ class EulerDiagram(SetDiagram):
 
         References
         ----------
-        _[1]: https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html
+        .. [1] https://amueller.github.io/word_cloud/generated/wordcloud.WordCloud.html
 
         """
         subsets = get_subsets(sets)

@@ -5,7 +5,7 @@ Venn diagrams
 
 Venn diagrams show all possible relationships of inclusion and exclusion between two or more sets.
 
-The :code::`VennDiagram` class supports initialisation from
+The :py:class:`VennDiagram` class supports initialisation from
 
   - a dictionary mapping subsets to their sizes, and
   - directly from a list of sets.

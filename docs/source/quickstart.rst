@@ -3,6 +3,8 @@
 Quickstart
 ==========
 
+This section is for the impatient. For more comprehensive, step-by-step guides, please consult the :doc:`./sphinx_gallery_output/index`.
+
 .. code-block:: python
 
     import matplotlib.pyplot as plt

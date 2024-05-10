@@ -16,28 +16,16 @@ In Euler diagrams, the area corresponding to each subset is scaled according to 
 .. _Venn: https://en.wikipedia.org/wiki/Venn_diagram
 
 
-Installation
-------------
-
-From PyPI:
-
-.. code-block:: shell
-
-    pip install matplotlib_set_diagrams
-
-
 Contributing & Support
 ----------------------
 
-If you get stuck and have a question that is not covered in the
-documentation, please raise an issue on GitHub_. If applicable, make a
-sketch of the desired result. If you submit a bug report please make
-sure to include the complete error trace. Include any relevant code
-and data in a `minimal, reproducible example`__.
-
+If you get stuck and have a question that is not covered in the documentation, please raise an issue on GitHub_.
+If applicable, make a sketch of the desired result.
+If you submit a bug report, please make sure to include the complete error trace.
+Include any relevant code and data in a `minimal, reproducible example`__.
 Pull requests are always welcome.
 
-.. _GitHub: https://github.com/paulbrodersen/matplotlib_set_diagrams
+.. _GitHub: https://github.com/paulbrodersen/matplotlib_set_diagrams/issues
 __ https://stackoverflow.com/help/minimal-reproducible-example
 
 
@@ -57,11 +45,4 @@ __ https://stackoverflow.com/help/minimal-reproducible-example
 
    eulerdiagram.rst
    venndiagram.rst
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   utils.rst

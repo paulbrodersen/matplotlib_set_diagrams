@@ -7,7 +7,7 @@ To visualise subset contents (rather than sizes), use the
 :code:`as_wordcloud` constructors, which generate a word cloud using
 the word_cloud_ library.
 
-_word_cloud: https://github.com/amueller/word_cloud)
+.. _word_cloud: https://github.com/amueller/word_cloud
 
 """
 

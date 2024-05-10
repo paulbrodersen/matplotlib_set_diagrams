@@ -12,5 +12,5 @@ EulerDiagram
    EulerDiagram.as_wordcloud
 
 .. autoclass:: EulerDiagram
-.. autoclass:: EulerDiagram.from_sets
-.. autoclass:: EulerDiagram.as_wordcloud
+.. automethod:: EulerDiagram.from_sets
+.. automethod:: EulerDiagram.as_wordcloud

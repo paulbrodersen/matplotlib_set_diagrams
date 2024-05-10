@@ -6,7 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Matplotlib set diagrams'
+project = 'Matplotlib Set Diagrams'
 copyright = '2024, Paul Brodersen'
 author = 'Paul Brodersen'
 

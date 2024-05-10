@@ -12,5 +12,5 @@ VennDiagram
    VennDiagram.as_wordcloud
 
 .. autoclass:: VennDiagram
-.. autoclass:: VennDiagram.from_sets
-.. autoclass:: VennDiagram.as_wordcloud
+.. automethod:: VennDiagram.from_sets
+.. automethod:: VennDiagram.as_wordcloud

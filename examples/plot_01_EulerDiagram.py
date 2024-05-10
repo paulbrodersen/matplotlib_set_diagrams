@@ -5,7 +5,7 @@ Euler diagrams
 
 Euler diagrams are area-proportional set diagrams, i.e. each area is proportional to the size of the corresponding subset.
 
-The :code::`EulerDiagram` class supports initialisation from
+The :py:class:`EulerDiagram` class supports initialisation from
 
   - a dictionary mapping subsets to their sizes, and
   - directly from a list of sets.

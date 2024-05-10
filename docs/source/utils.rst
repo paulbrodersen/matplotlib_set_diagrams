@@ -10,5 +10,5 @@ Utility functions
    get_subset_ids
    get_subsets
 
-.. autoclass:: get_subset_ids
-.. autoclass:: get_subsets
+.. autofunction:: get_subset_ids
+.. autofunction:: get_subsets

@@ -82,8 +82,9 @@ VennDiagram(subset_sizes, subset_label_formatter=formatter)
 plt.show()
 
 ################################################################################
-# Finally, the matplotlib :code:`Text` objects corresponding to the set and subset labels
-# can be manipulated directly:
+# Finally, the set label "artists" and subset labels "artists" are just
+# matplotlib :code:`Text` objects, which can be manipulated directly using the
+# standard matplotlib text object methods:
 
 set_labels = ["Lorem", "ipsum"]
 set_colors = ["tab:blue", "tab:red"]
