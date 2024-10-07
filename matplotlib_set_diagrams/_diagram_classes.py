@@ -29,6 +29,7 @@ from typing import (
     Optional,
     Callable,
     Mapping,
+    Union,
 )
 from numpy.typing import NDArray
 from matplotlib.typing import ColorType
@@ -152,9 +153,9 @@ class SetDiagram:
             subset_geometries : Mapping[Tuple[bool], ShapelyPolygon],
             subset_colors     : Mapping[Tuple[bool], NDArray],
             ax                : plt.Axes,
-    ) -> dict[Tuple[bool], plt.Polygon | PolyCollection]:
+    ) -> dict[Tuple[bool], Union[plt.Polygon, PolyCollection]]:
         """Draw each subset as a separate polygon patch."""
-        subset_artists : dict[Tuple[bool], plt.Polygon | PolyCollection] = dict()
+        subset_artists : dict[Tuple[bool], Union[plt.Polygon, PolyCollection]] = dict()
         for subset, geometry in subset_geometries.items():
             if geometry.area > 0:
                 if isinstance(geometry, ShapelyPolygon):
@@ -283,9 +284,9 @@ class EulerDiagram(SetDiagram):
 
     def __init__(
             self,
-            subset_sizes            : Mapping[Tuple[bool], int | float],
+            subset_sizes            : Mapping[Tuple[bool], Union[int, float]],
             subset_labels           : Optional[Mapping[Tuple[bool], str]]       = None,
-            subset_label_formatter  : Callable[[Tuple[bool], int | float], str] = lambda subset, size : str(size),
+            subset_label_formatter  : Callable[[Tuple[bool], Union[int, float]], str] = lambda subset, size : str(size),
             set_labels              : Optional[list[str]]                       = None,
             set_colors              : Optional[list[ColorType]]                 = None,
             cost_function_objective : str                                       = "inverse",
@@ -316,7 +317,7 @@ class EulerDiagram(SetDiagram):
 
     def _get_layout(
             self,
-            subset_sizes : Mapping[Tuple[bool], int | float],
+            subset_sizes : Mapping[Tuple[bool], Union[int, float]],
             cost_function_objective : str,
             verbose : bool
     ) -> Tuple[NDArray, NDArray]:
@@ -327,14 +328,14 @@ class EulerDiagram(SetDiagram):
         return origins, radii
 
 
-    def _initialize_layout(self, subset_sizes : Mapping[Tuple[bool], int | float]) -> Tuple[NDArray, NDArray]:
+    def _initialize_layout(self, subset_sizes : Mapping[Tuple[bool], Union[int, float]]) -> Tuple[NDArray, NDArray]:
         set_sizes = self._get_set_sizes(subset_sizes)
         radii = self._initialize_radii(set_sizes)
         origins = self._initialize_origins(radii)
         return origins, radii
 
 
-    def _get_set_sizes(self, subset_sizes : Mapping[Tuple[bool], int | float]) -> NDArray:
+    def _get_set_sizes(self, subset_sizes : Mapping[Tuple[bool], Union[int, float]]) -> NDArray:
         """Compute the size of each set based on the sizes of its constituent sub-sets"""
         return np.sum([size * np.array(subset) for subset, size in subset_sizes.items()], axis=0)
 
@@ -370,7 +371,7 @@ class EulerDiagram(SetDiagram):
 
     def _optimize_layout(
             self,
-            subset_sizes : Mapping[Tuple[bool], int | float],
+            subset_sizes : Mapping[Tuple[bool], Union[int, float]],
             origins      : NDArray,
             radii        : NDArray,
             objective    : str,
@@ -448,8 +449,8 @@ class EulerDiagram(SetDiagram):
 
     def _get_subset_labels(
             self,
-            subset_sizes : Mapping[Tuple[bool], int | float],
-            formatter    : Callable[[Tuple[bool], int | float], str],
+            subset_sizes : Mapping[Tuple[bool], Union[int, float]],
+            formatter    : Callable[[Tuple[bool], Union[int, float]], str],
     ) -> dict[Tuple[bool], str]:
         """Map subset sizes to strings using the provided formatter."""
         subset_labels = dict()
@@ -458,7 +459,7 @@ class EulerDiagram(SetDiagram):
         return subset_labels
 
 
-    def _hide_empty_subsets(self, subset_sizes : Mapping[Tuple[bool], int | float]) -> None:
+    def _hide_empty_subsets(self, subset_sizes : Mapping[Tuple[bool], Union[int, float]]) -> None:
         """If the layout routine assigned a non-zero area to a zero-size subset, hide it."""
         for subset, size in subset_sizes.items():
             if (size == 0) & (self.subset_geometries[subset].area > 0):
@@ -760,9 +761,9 @@ class VennDiagram(EulerDiagram):
 
     def __init__(
             self,
-            subset_sizes            : Mapping[Tuple[bool], int | float],
+            subset_sizes            : Mapping[Tuple[bool], Union[int, float]],
             subset_labels           : Optional[Mapping[Tuple[bool], str]]       = None,
-            subset_label_formatter  : Callable[[Tuple[bool], int | float], str] = lambda subset, size : str(size),
+            subset_label_formatter  : Callable[[Tuple[bool], Union[int, float]], str] = lambda subset, size : str(size),
             set_labels              : Optional[list[str]]                       = None,
             set_colors              : Optional[list[ColorType]]                 = None,
             ax                      : Optional[plt.Axes]                        = None,
