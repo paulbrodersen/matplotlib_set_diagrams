@@ -44,6 +44,28 @@ artist.set_alpha(0.9)
 plt.show()
 
 ################################################################################
+# The outlines of the sets are invisible by default.
+# To show them, access the corresponding matplotlib :code:`Circle` artists,
+# and set their visibility to True.
+
+fig, ax = plt.subplots()
+diagram = VennDiagram(subset_sizes, set_colors=set_colors, ax=ax)
+for artist in diagram.set_artists:
+    artist.set_visible(True)
+plt.show()
+
+################################################################################
+# The set artists can be styled using the standard matplotlib methods.
+
+fig, ax = plt.subplots()
+diagram = VennDiagram(subset_sizes, set_colors=set_colors, ax=ax)
+for artist in diagram.set_artists:
+    artist.set_visible(True)
+    artist.set_edgecolor("#2c404c") # off-black
+    artist.set_linewidth(0.5)
+plt.show()
+
+################################################################################
 #
 # Labels
 # ------
