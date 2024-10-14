@@ -88,13 +88,21 @@ class SetDiagram:
             ax            : Optional[plt.Axes]                  = None,
     ) -> None:
 
-        subset_ids = get_subset_ids(len(origins))
+        total_sets = len(origins)
+        subset_ids = get_subset_ids(total_sets)
         self.subset_geometries : ShapelyPolygon = \
             self._get_subset_geometries(subset_ids, origins, radii)
+
+        if set_colors is None:
+            set_colors = plt.rcParamsDefault['axes.prop_cycle'].by_key()['color']
+            set_colors = set_colors[:total_sets]
         self.subset_colors = self._get_subset_colors(subset_ids, set_colors)
+
         self.ax = self._initialize_axis(ax=ax)
         self.subset_artists = self._draw_subsets(
             self.subset_geometries, self.subset_colors, self.ax)
+        self.set_artists = self._draw_sets(
+            origins, radii, set_colors, self.ax)
 
         if subset_labels:
             self.subset_label_artists = self._draw_subset_labels(
@@ -124,11 +132,9 @@ class SetDiagram:
     def _get_subset_colors(
             self,
             subsets    : list[Tuple[bool]],
-            set_colors : Optional[list[ColorType]] = None,
+            set_colors : list[ColorType],
     ) -> dict[Tuple[bool], NDArray]:
         """Determine the color of each subset patch based on the colors of the overlapping sets."""
-        if set_colors is None:
-            set_colors = plt.rcParamsDefault['axes.prop_cycle'].by_key()['color']
         subset_colors = dict()
         for subset in subsets:
             subset_colors[subset] = blend_colors([set_colors[ii] for ii, is_superset in enumerate(subset) if is_superset])
@@ -217,6 +223,22 @@ class SetDiagram:
             ha, va = get_text_alignment(*delta)
             set_label_artists.append(ax.text(x, y, label, ha=ha, va=va))
         return set_label_artists
+
+
+    def _draw_sets(
+            self,
+            origins     : NDArray,
+            radii       : NDArray,
+            set_colors  : list[ColorType],
+            ax          : plt.Axes,
+    ) -> list[plt.Circle]:
+        set_artists = []
+        for origin, radius, color in zip(origins, radii, set_colors):
+            artist = plt.Circle(origin, radius, color=color, fill=False)
+            ax.add_patch(artist)
+            artist.set_visible(False)
+            set_artists.append(artist)
+        return set_artists
 
 
 class EulerDiagram(SetDiagram):
