@@ -275,3 +275,12 @@ def test_three_way_euler_with_xor_set():
 def test_axis_initialization():
     diagram = EulerDiagram.from_sets([set(), set()])
     return diagram.ax.get_figure()
+
+
+@pytest.mark.mpl_image_compare
+def test_set_artists():
+    fig, ax = plt.subplots()
+    diagram = SetDiagram([(0, 0), (1, 0)], [0.66, 0.66], ax=ax)
+    for artist in diagram.set_artists:
+        artist.set_visible(True)
+    return fig
