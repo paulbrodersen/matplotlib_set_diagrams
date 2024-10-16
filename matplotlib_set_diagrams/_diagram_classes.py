@@ -98,13 +98,14 @@ class SetDiagram:
         if set_colors is None:
             set_colors = plt.rcParamsDefault['axes.prop_cycle'].by_key()['color']
             set_colors = set_colors[:total_sets]
-        self.subset_colors = self._get_subset_colors(subset_ids, set_colors)
+        self.set_colors = set_colors
+        self.subset_colors = self._get_subset_colors(subset_ids, self.set_colors)
 
         self.ax = self._initialize_axis(ax=ax)
         self.subset_artists = self._draw_subsets(
             self.subset_geometries, self.subset_colors, self.ax)
         self.set_artists = self._draw_sets(
-            origins, radii, set_colors, self.ax)
+            origins, radii, self.set_colors, self.ax)
 
         if subset_labels:
             self.subset_label_artists = self._draw_subset_labels(
