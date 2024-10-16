@@ -204,7 +204,7 @@ class SetDiagram:
                 fontcolor = "black" if rgba_to_grayscale(*subset_colors[subset]) > 0.5 else "white"
                 subset_label_artists[subset] = ax.text(
                     poi.x, poi.y, label,
-                    color=fontcolor, va="center", ha="center"
+                    fontsize="small", color=fontcolor, va="center", ha="center"
                 )
         return subset_label_artists
 
@@ -223,7 +223,7 @@ class SetDiagram:
             delta = origins[ii] - np.mean([origin for jj, origin in enumerate(origins) if ii != jj], axis=0)
             x, y = origins[ii] + (1 + offset) * radii[ii] * delta / np.linalg.norm(delta)
             ha, va = get_text_alignment(*delta)
-            set_label_artists.append(ax.text(x, y, label, ha=ha, va=va))
+            set_label_artists.append(ax.text(x, y, label, fontsize="large", ha=ha, va=va))
         return set_label_artists
 
 
