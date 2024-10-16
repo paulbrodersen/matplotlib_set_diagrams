@@ -373,7 +373,7 @@ class EulerDiagram(SetDiagram):
         """The optimisation procedure uses gradient descent to find
         the circle arrangement that best matches the desired subset
         areas. If a subset area is zero, there is no gradient to
-        follow. It is hence paraount that all subset areas exist at
+        follow. It is hence paramount that all subset areas exist at
         initialization.
 
         Here, we evenly space the circle origins around the center of
