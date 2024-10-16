@@ -39,6 +39,8 @@ from shapely import (
     MultiPolygon as ShapelyMultiPolygon,
 )
 
+POLYLABEL_TOLERANCE = 1e-4
+
 
 class SetDiagram:
     """Draw a diagram visualising the relationships between two or
@@ -185,7 +187,7 @@ class SetDiagram:
             subset_colors     : Mapping[Tuple[bool], NDArray],
             ax                : plt.Axes,
     ) -> dict[Tuple[bool], plt.Text]:
-        """Place subset labels centred on the point of inaccesibility
+        """Place subset labels centred on the point of inaccessibility
         (POI) of the corresponding polygon.
         """
         subset_label_artists = dict()
@@ -193,10 +195,10 @@ class SetDiagram:
             geometry = subset_geometries[subset]
             if geometry.area > 0:
                 if isinstance(geometry, ShapelyPolygon):
-                    poi = polylabel(geometry)
+                    poi = polylabel(geometry, tolerance=POLYLABEL_TOLERANCE)
                 elif isinstance(geometry, ShapelyMultiPolygon):
                     # use largest sub-geometry
-                    poi = polylabel(max(geometry.geoms, key=lambda x:x.area))
+                    poi = polylabel(max(geometry.geoms, key=lambda x:x.area), tolerance=POLYLABEL_TOLERANCE)
                 else:
                     raise TypeError(f"Shapely returned neither a Polygon or MultiPolygon but instead {type(geometry)} object!")
                 fontcolor = "black" if rgba_to_grayscale(*subset_colors[subset]) > 0.5 else "white"
