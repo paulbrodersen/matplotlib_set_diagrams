@@ -146,6 +146,17 @@ def test_EulerDiagram_as_wordcloud():
 
 
 @pytest.mark.mpl_image_compare
+def test_EulerDiagram_as_wordcloud_with_empty_subsets():
+    sets = [
+        {"a", "b"},
+        {"c"}
+    ]
+    fig, ax = plt.subplots()
+    EulerDiagram.as_wordcloud(sets, wordcloud_kwargs=dict(random_state=42), ax=ax)
+    return fig
+
+
+@pytest.mark.mpl_image_compare
 def test_VennDiagram():
     fig, axes = plt.subplots(1, 2, sharex=True, sharey=True)
     axes = axes.ravel()

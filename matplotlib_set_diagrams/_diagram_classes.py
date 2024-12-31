@@ -670,7 +670,7 @@ class EulerDiagram(SetDiagram):
                 mask             = mask,
                 rgba             = self.subset_colors[subset_id],
                 wordcloud_kwargs = wordcloud_kwargs,
-            ) for subset_id, mask in subset_masks.items()
+            ) for subset_id, mask in subset_masks.items() if subsets[subset_id]
         ]
 
         combined_image = np.sum(subset_images, axis=0)

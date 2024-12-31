@@ -188,6 +188,13 @@ supervenn(sets, labels)
 plt.show()
 ```
 
+
+## Recent Changes
+
+- 0.1.1 Fix a bug that occurred when attempting to draw word clouds for empty (sub-)sets (issue #6)
+- 0.1.0 Implement set artists such that set outlines can be shown (issue #4)
+
+
 ## Contributing & Support
 
 If you get stuck and have a question that is not covered in the documentation, please raise an issue on the [issue tracker](https://github.com/paulbrodersen/matplotlib_set_diagrams/issues).
