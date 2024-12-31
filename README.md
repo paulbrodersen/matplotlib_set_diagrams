@@ -191,6 +191,7 @@ plt.show()
 
 ## Recent Changes
 
+- 0.2.0 Various improvements to set and subset label placement and styling (issue #5)
 - 0.1.1 Fix a bug that occurred when attempting to draw word clouds for empty (sub-)sets (issue #6)
 - 0.1.0 Implement set artists such that set outlines can be shown (issue #4)
 
