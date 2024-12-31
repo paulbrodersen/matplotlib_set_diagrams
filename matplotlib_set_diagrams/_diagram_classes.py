@@ -96,13 +96,14 @@ class SetDiagram:
         if set_colors is None:
             set_colors = plt.rcParamsDefault['axes.prop_cycle'].by_key()['color']
             set_colors = set_colors[:total_sets]
-        self.subset_colors = self._get_subset_colors(subset_ids, set_colors)
+        self.set_colors = set_colors
+        self.subset_colors = self._get_subset_colors(subset_ids, self.set_colors)
 
         self.ax = self._initialize_axis(ax=ax)
         self.subset_artists = self._draw_subsets(
             self.subset_geometries, self.subset_colors, self.ax)
         self.set_artists = self._draw_sets(
-            origins, radii, set_colors, self.ax)
+            origins, radii, self.set_colors, self.ax)
 
         if subset_labels:
             self.subset_label_artists = self._draw_subset_labels(
@@ -180,12 +181,13 @@ class SetDiagram:
 
     def _draw_subset_labels(
             self,
-            subset_labels     : Mapping[Tuple[bool], str],
-            subset_geometries : Mapping[Tuple[bool], ShapelyPolygon],
-            subset_colors     : Mapping[Tuple[bool], NDArray],
-            ax                : plt.Axes,
+            subset_labels       : Mapping[Tuple[bool], str],
+            subset_geometries   : Mapping[Tuple[bool], ShapelyPolygon],
+            subset_colors       : Mapping[Tuple[bool], NDArray],
+            ax                  : plt.Axes,
+            polylabel_tolerance : float = 1e-2,
     ) -> dict[Tuple[bool], plt.Text]:
-        """Place subset labels centred on the point of inaccesibility
+        """Place subset labels centred on the point of inaccessibility
         (POI) of the corresponding polygon.
         """
         subset_label_artists = dict()
@@ -193,16 +195,16 @@ class SetDiagram:
             geometry = subset_geometries[subset]
             if geometry.area > 0:
                 if isinstance(geometry, ShapelyPolygon):
-                    poi = polylabel(geometry)
+                    poi = polylabel(geometry, tolerance=polylabel_tolerance)
                 elif isinstance(geometry, ShapelyMultiPolygon):
                     # use largest sub-geometry
-                    poi = polylabel(max(geometry.geoms, key=lambda x:x.area))
+                    poi = polylabel(max(geometry.geoms, key=lambda x:x.area), tolerance=polylabel_tolerance)
                 else:
                     raise TypeError(f"Shapely returned neither a Polygon or MultiPolygon but instead {type(geometry)} object!")
                 fontcolor = "black" if rgba_to_grayscale(*subset_colors[subset]) > 0.5 else "white"
                 subset_label_artists[subset] = ax.text(
                     poi.x, poi.y, label,
-                    color=fontcolor, va="center", ha="center"
+                    fontsize="small", color=fontcolor, va="center", ha="center"
                 )
         return subset_label_artists
 
@@ -221,7 +223,7 @@ class SetDiagram:
             delta = origins[ii] - np.mean([origin for jj, origin in enumerate(origins) if ii != jj], axis=0)
             x, y = origins[ii] + (1 + offset) * radii[ii] * delta / np.linalg.norm(delta)
             ha, va = get_text_alignment(*delta)
-            set_label_artists.append(ax.text(x, y, label, ha=ha, va=va))
+            set_label_artists.append(ax.text(x, y, label, fontsize="large", ha=ha, va=va))
         return set_label_artists
 
 
@@ -371,7 +373,7 @@ class EulerDiagram(SetDiagram):
         """The optimisation procedure uses gradient descent to find
         the circle arrangement that best matches the desired subset
         areas. If a subset area is zero, there is no gradient to
-        follow. It is hence paraount that all subset areas exist at
+        follow. It is hence paramount that all subset areas exist at
         initialization.
 
         Here, we evenly space the circle origins around the center of
