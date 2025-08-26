@@ -11,6 +11,8 @@ This library was inspired by [`matplotlib-venn`](https://github.com/konstantint/
 > This package uses circles for visualizing set relationships.
 > With four or more sets, it can be impossible to arrange the four or more circles such that all non-empty subsets are shown.
 > A warning is raised in these instances.
+> See [this issue](https://github.com/paulbrodersen/matplotlib_set_diagrams/issues/9) for a discussion of the problem.
+> A list of references regarding the maximum number of plane divisions by circles can be found [here](https://mathworld.wolfram.com/PlaneDivisionbyCircles.html).
 
 
 ## Installation
