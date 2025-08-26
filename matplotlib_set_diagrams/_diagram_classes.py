@@ -44,6 +44,8 @@ class SetDiagram:
     """Draw a diagram visualising the relationships between two or
     more sets using two or more overlapping circles.
 
+    Parameters
+    ----------
     origins : NDArray
         The circle origins.
     radii : NDArray
@@ -349,6 +351,9 @@ class EulerDiagram(SetDiagram):
         origins, radii = self._optimize_layout(subset_sizes, origins, radii,
                                                cost_function_objective,
                                                verbose=verbose)
+        self._raise_warning_if_there_are_more_nonempty_subsets_than_can_be_displayed(
+            len(origins), subset_sizes
+        )
         self._raise_warning_if_there_are_zero_area_non_empty_subsets(
             subset_sizes, origins, radii
         )
@@ -468,6 +473,30 @@ class EulerDiagram(SetDiagram):
         origins = result.x.reshape((-1, 2))
 
         return origins, radii
+
+
+    def _raise_warning_if_there_are_more_nonempty_subsets_than_can_be_displayed(
+            self,
+            total_sets : int,
+            subset_sizes : Mapping[Tuple[bool], Union[int, float]],
+    ):
+        """Compute the theoretical maximum number of plane divisions
+        by circles, and raise a warning, if the number of non-empty
+        subsets exceeds the number of areas.
+
+        References
+        ----------
+        [1] https://mathworld.wolfram.com/PlaneDivisionbyCircles.html
+
+        """
+
+        maximum_number_of_regions = total_sets**2 - total_sets + 1
+        total_non_empty_subsets = np.sum(np.array(list(subset_sizes.values())) > 0)
+        if total_non_empty_subsets > maximum_number_of_regions:
+            msg  = f"The number of non-empty subsets is {total_non_empty_subsets}."
+            msg += f" However, plane division by {total_sets} circles can only create {maximum_number_of_regions} enclosed regions."
+            msg += f" Some subsets cannot be visualized."
+            warnings.warn(msg)
 
 
     def _raise_warning_if_there_are_zero_area_non_empty_subsets(
