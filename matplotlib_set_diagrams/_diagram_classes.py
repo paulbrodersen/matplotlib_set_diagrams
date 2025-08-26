@@ -349,6 +349,9 @@ class EulerDiagram(SetDiagram):
         origins, radii = self._optimize_layout(subset_sizes, origins, radii,
                                                cost_function_objective,
                                                verbose=verbose)
+        self._raise_warning_if_there_are_zero_area_non_empty_subsets(
+            subset_sizes, origins, radii
+        )
         return origins, radii
 
 
@@ -465,6 +468,19 @@ class EulerDiagram(SetDiagram):
         origins = result.x.reshape((-1, 2))
 
         return origins, radii
+
+
+    def _raise_warning_if_there_are_zero_area_non_empty_subsets(
+            self,
+            subset_sizes : Mapping[Tuple[bool], Union[int, float]],
+            origins      : NDArray,
+            radii        : NDArray,
+    ):
+        """Raise a warning if the layout routine failed to find a solution that displays all non-empty subsets."""
+        subset_geometries = self._get_subset_geometries(subset_sizes.keys(), origins, radii)
+        for subset, size in subset_sizes.items():
+            if np.isclose(subset_geometries[subset].area, 0) & (size > 0):
+                warnings.warn(f"Layout engine failed to find a solution that displays the non-empty subset {subset} with size {size}")
 
 
     def _get_set_labels(self, total_sets : int) -> list[str]:

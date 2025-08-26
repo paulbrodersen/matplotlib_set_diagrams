@@ -7,6 +7,12 @@
 This library was inspired by [`matplotlib-venn`](https://github.com/konstantint/matplotlib-venn/), but developed independently. It adds support for creating set diagrams for an arbitrary number of sets, visualising set and subset contents, and implements an improved layout engine. For more details, [see below](https://github.com/paulbrodersen/matplotlib_set_diagrams?tab=readme-ov-file#alternative-python-libraries). This library also improves on and replaces [`matplotlib_venn_wordcloud`](https://github.com/paulbrodersen/matplotlib_venn_wordcloud).
 
 
+> [!CAUTION]
+> This package uses circles for visualizing set relationships.
+> With four or more sets, it can be impossible to arrange the four or more circles such that all non-empty subsets are shown.
+> A warning is raised in these instances.
+
+
 ## Installation
 
 ``` shell
