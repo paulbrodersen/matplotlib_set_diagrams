@@ -38,7 +38,8 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/matplotlib_set_diagrams  # Replace <package-name> with your PyPI project name
+      # url: https://pypi.org/p/matplotlib_set_diagrams  # Replace <package-name> with your PyPI project name
+      url: https://pypi.org/project/matplotlib-set-diagrams  # Replace <package-name> with your PyPI project name
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
     steps:
